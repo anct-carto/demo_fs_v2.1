@@ -1,0 +1,3 @@
+# send params to url 
+https://stackoverflow.com/questions/32828160/appending-parameter-to-url-without-refresh 
+https://developer.mozilla.org/fr/docs/Web/API/URLSearchParams
