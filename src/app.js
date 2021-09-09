@@ -402,8 +402,11 @@ let pdfTemplate = {
                 
             html2pdf().set({
                 filename:'france-services-fiche-' + this.fs.matricule + '.pdf',
+                image: {type:'jpg', quality:1},
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait'}
             }).from(document.body.innerHTML).save()
+
+            this.$router.back();
                 
         }, 1000);
 
@@ -988,7 +991,7 @@ let sidebar_template = {
                             <span id="nb-results" v-if="params.get('qtype')!='click'">
                                 <b>{{ fromParent.length }}</b> résultat<span v-if="fromParent.length>1">s</span>
                             </span>
-                            <span id="text-distance" v-if="searchType=='address'">
+                            <span id="text-distance" v-if="params.get('qtype')=='address'">
                                 Les distances sont calculées à vol d'oiseau
                             </span>
                         </div>
@@ -1647,7 +1650,7 @@ let map_template = {
 const routes = [
     {
         name: 'fiche',
-        path: '/fiche/:matricule', 
+        path: '/fiche:matricule', 
         component: pdfTemplate, 
         props:true,
     },

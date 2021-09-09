@@ -432,6 +432,16 @@ input[type="range"]::-webkit-slider-thumb {
 	width: 20px !important;
 	background: var(--bleu-second) !important;
 	border: solid 2px white;
+	border-radius: 20px;
+	margin: 35px 0 35px 0;
+}
+
+input[type="range"]::-moz-range-thumb {
+	-webkit-appearance: none; 
+	height: 15px !important;
+	width: 15px !important;
+	background: var(--bleu-second) !important;
+	border: solid 2px white;
 	border-radius: 10px;
 	margin: 35px 0 35px 0;
 }
@@ -457,7 +467,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
 #radius-val:before {
 	content: '';
-	display: block;
+	display: none;
 	position: absolute;
 	left: 0;
 	right: 0;
@@ -583,9 +593,6 @@ input[type="range"]::-webkit-slider-thumb:hover {
 .card-controls {
 	margin-top: 15px;
 	margin-bottom: 15px;
-	/* display: flex;
-	align-items: flex-end;
-	justify-content:flex-end; */
 }
 
 .card-btn-text:active {
@@ -598,13 +605,14 @@ input[type="range"]::-webkit-slider-thumb:hover {
 	display: none;
 	position: absolute;
 	margin-top:-60px;
-	margin-left:155px;
+	margin-left:90px;
 	padding: 5px 15px 5px 15px;
 	background-color: rgba(92, 92, 92,.9) !important;
 	text-transform: capitalize;
 	color: white;
 	border-radius: 3px;
 }
+
 
 /* -------------------------------------------------------------------------- */
 /* 								 SCROLL BAR						   	 		  */													
