@@ -604,21 +604,6 @@ let card_template = {
             let copiedTooltip = document.getElementById("copied-tooltip");
             copiedTooltip.style.display = "none";
         },
-        getPdf2(fs) {
-            console.log("open pdf template");
-            this.clicked = true;
-            setTimeout(() => {
-                coucou = document.getElementById("coucou");
-                app = document.getElementById("app");
-                console.log(coucou);
-                app.innerHTML = coucou.innerHTML;
-                setTimeout(() => {                    
-                    // app.style.marginLeft = "20%"
-                    // app.style.marginRight = "20%"
-                }, 500);
-                // html2pdf(document.body.innerHTML)
-            }, 1000);
-        },
         getPdf() {
             matricule = this.fs.matricule;
             this.$router.push({name: 'fiche', params: { matricule: matricule, fs:this.fs }})
