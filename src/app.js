@@ -583,8 +583,8 @@ let card_template = {
         },
         copyLink() {
             event.stopPropagation()
-            linkToShare = `${url.origin}/?qtype=click&matricule=${this.fs.matricule}`;
-            navigator.clipboard.writeText(linkToShare)
+            linkToShare = `${url.origin}/demo_fs_v2.1/?qtype=click&matricule=${this.fs.matricule}`;
+            navigator.clipboard.writeText(linkToShare);
             let copiedTooltip = document.getElementById("copied-tooltip");
             copiedTooltip.style.display = "block";
         },
