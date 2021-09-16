@@ -1391,6 +1391,9 @@ let map_template = {
         checkURLParams() {
             let params = this.params;
             queryType = params.get("qtype");
+            if(queryType) {
+                this.sidebar.open("search-tab");
+            }
             switch (queryType) {
                 case "address":
                     let resultMarker = params.get("qlatlng").split(",");
@@ -1406,9 +1409,11 @@ let map_template = {
                     this.sidebar.open("search-tab");
                 break;
                 case "click":
-                    id = params.get("matricule");
-                    fs = fs_tab_fetched.filter(e => e.matricule == id)[0];
+                    let id = params.get("matricule");
+                    let fs = fs_tab_fetched.filter(e => e.matricule == id)[0];
                     this.displayInfo(fs);                    
+                    center = this.map.getCenter();
+                    this.map.setView([center.lat, fs.longitude]);
                     break;
             };
         },
