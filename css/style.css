@@ -434,7 +434,7 @@ input[type="range"]::-webkit-slider-thumb {
 	background: var(--bleu-second) !important;
 	border: solid 2px white;
 	border-radius: 10px;
-	margin: 35px 0 35px 0;
+	margin: 50px 50px 50px 50px;
 	z-index: 100 !important;
 }
 
@@ -444,7 +444,7 @@ input[type="range"]::-moz-range-thumb {
 	width: 15px !important;
 	background: var(--bleu-second) !important;
 	border: solid 2px white;
-	border-radius: 10px;
+	margin: 100px;
 	/* margin: 35px 0 35px 0; */
 	margin:50px;
 	content:var(--thumbNumber);
