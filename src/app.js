@@ -10,8 +10,7 @@ const url = new URL(window.location.href);
 const params = url.searchParams;
 const qtype = params.get("qtype");
 
-//let data_url = "https://docs.google.com/spreadsheets/d/1_i0-v9EOrFhEiHQSk6wdBFpsfaAU0oxjm-pEhviJdxM/edit?usp=sharing"
-let data_url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRuDOzH3iy8ZNpDJiXHLyILhTgmEdeJUa7GicPR7QdEngN6d4jPMFvfERkVOTN0qal96k5aeGXtxMzA/pub?output=csv"
+const data_url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTYHKBasZmLcPAmjQUG08ca3R8z2VeK_ySbNZHXKWgVH7OlvrLMN3Cio3nHByxNgnK3IqoxAuOUAMCT/pub?gid=1164093734&single=true&output=csv"
 let fs_tab_fetched = [];
 let page_status;
 
@@ -22,11 +21,6 @@ function init() {
         header: true,
         complete: (results) => fetchSpreadsheetData(results.data)
     });
-/*    Tabletop.init({
-      key: data_url,
-      callback: fetchSpreadsheetData,
-      simpleSheet: true,
-    })*/
 };
 
 function fetchSpreadsheetData(res) {
@@ -104,10 +98,10 @@ let search_group_template = {
                 <div id = "search-type-group">
                     <span id="search-type-text">Rechercher par :</span>
                     <div class="btn-group btn-group-toggle" id="search-type-radio" data-toggle="buttons">
-                        <label class="search-type-btn btn btn-outline-primary active">
+                        <label class="search-type-btn btn btn-outline-primary active" aria-label="Rechercher une adresse" title="Rechercher une adresse">
                             <input type="radio" name="address" id="adresse-btn" @click="onChange($event)" checked>Adresse
                         </label>
-                        <label class="search-type-btn btn btn-outline-primary">
+                        <label class="search-type-btn btn btn-outline-primary" aria-label="Rechercher un département" title="Rechercher un département">
                             <input type="radio" name="admin" id="dep-btn" @click="onChange($event)">Département
                         </label>
                     </div>
@@ -368,8 +362,6 @@ let pdfTemplate = {
         }
     },
     mounted() {
-        console.log(this.fs);
-        console.log(this.$route.params);
         setTimeout(() => {
             let fs = this.fs;
             let coords = [fs.latitude,fs.longitude];
@@ -589,10 +581,6 @@ let card_template = {
                 duration:1,
             });
         },
-        print(fs) {
-            id = fs.matricule;
-            this.$htmlToPaper(id);
-        },
         copyLink() {
             event.stopPropagation()
             linkToShare = `${url.origin}/?qtype=click&matricule=${this.fs.matricule}`;
@@ -604,6 +592,10 @@ let card_template = {
             let copiedTooltip = document.getElementById("copied-tooltip");
             copiedTooltip.style.display = "none";
         },
+        print(fs) {
+            id = fs.matricule;
+            this.$htmlToPaper(id);
+        },
         getPdf() {
             matricule = this.fs.matricule;
             this.$router.push({name: 'fiche', params: { matricule: matricule, fs:this.fs }})
@@ -612,6 +604,8 @@ let card_template = {
         },
     },
     template: `<div class="card result-card"
+                    aria-label="Cliquer pour afficher plus d'informations"
+                    title="Cliquer pour afficher plus d'informations"
                     :id="fs.matricule"
                     @click="showInfo = !showInfo" 
                     :class="getHoveredCard()" 
@@ -797,10 +791,13 @@ let sliderTemplate = {
     },
     watch: {
         radiusVal() {
-            let tooltip = document.getElementById("radius-val")
-            // newValue = Number(((this.radiusVal - this.minRadiusVal)*100) / (this.maxRadiusVal - this.minRadiusVal));
-            // newPosition = `calc(${newValue}% + (${65 - newValue * 1.25}px))`; 
-            // tooltip.style.left = newPosition
+            let bubble = this.$refs.bubble;
+            const val = this.radiusVal;
+            const min = this.minRadiusVal;
+            const max = this.maxRadiusVal;
+            let pctValue = Number((val-min)*100/(max-min));
+
+            bubble.style.left = `calc(${pctValue}% + (${5 - pctValue * 0.6}px))`;
         }
     },
     mounted() {
@@ -814,14 +811,13 @@ let sliderTemplate = {
     },
     template:`
         <div id="range-slider-group">
-            <span for="customRange1" class="form-label">Rayon : </span>
-            <span id="radius-val">{{ radiusVal }} km</span>
+            <span for="customRange1" class="form-label" style="font-size:1.1em">Rayon de recherche à vol d'oiseau : </span><br>
+            <span id="input-thumb" ref="bubble">{{ radiusVal }} km</span>
             <input type="range" class="form-range" 
                    id="distance-slider" 
                    v-model="radiusVal" 
                    @change="emitRadius" 
                    min="minRadiusVal" max="50" step="0.2">
-            <!--<output id="radius-val">{{ radiusVal }} km</ouput>-->
         </div>
     `
 };
@@ -853,11 +849,12 @@ let sidebar_template = {
     watch: {
         fromParent() {
             this.show = true;
-            if(this.fromParent.length == '1') {
-                this.collapse = true;
-            } else {
-                this.collapse = false;
-            };
+            this.collapse = false;
+            // if(this.fromParent.length == '1') {
+            //     this.collapse = true;
+            // } else {
+            //     this.collapse = false;
+            // };
         },
         cardToHover(card_id) {
             hoveredCard = card_id;
@@ -937,6 +934,7 @@ let sidebar_template = {
                         </span>
                     </div>
                     <div class="panel-content">
+                        <h5 style="font-family:'Marianne-Extrabold';color:red">! CETTE PAGE EST EN COURS DE DEVELOPPEMENT !</h5>
                         <div class="header-logo">
                             <img src="img/logo_FranceServices-01.png" id="programme-logo">
                         </div>
@@ -967,6 +965,7 @@ let sidebar_template = {
                         </span>
                     </div>
                     <div>
+                        <h5 style="font-family:'Marianne-Extrabold';color:red">! CETTE PAGE EST EN COURS DE DEVELOPPEMENT !</h5>
                         <div id="search-inputs">
                             <search-group @searchResult="getSearchResult" @searchType="getSearchType" @clearSearch="clearSearch"></search-group>
                             <slider @radiusVal="radiusVal" v-if="searchType=='address'"></slider>
@@ -975,9 +974,6 @@ let sidebar_template = {
                         <div id="search-results-header" v-if="fromParent.length>0">
                             <span id="nb-results" v-if="params.get('qtype')!='click'">
                                 <b>{{ fromParent.length }}</b> résultat<span v-if="fromParent.length>1">s</span>
-                            </span>
-                            <span id="text-distance" v-if="params.get('qtype')=='address'">
-                                Les distances sont calculées à vol d'oiseau
                             </span>
                         </div>
                         <div id="results">
@@ -1018,6 +1014,8 @@ let sidebar_template = {
     `
 };
 
+
+// ****************************************************************************
 
 // init vue-leaflet
 
@@ -1148,7 +1146,6 @@ let map_template = {
             L.control.fullscreen({
                 position:'topright',
                 forcePseudoFullScreen:true,
-                title:'Afficher la carte en plein écran'
             }).addTo(this.map);
             L.control.scale({ position: 'bottomright', imperial:false }).addTo(map);
 
@@ -1167,11 +1164,14 @@ let map_template = {
             legend.onAdd = function (map) {
                 let expand = false;
                 var div = L.DomUtil.create('div', 'leaflet-legend');
-                
-                content_default = "<i class='la la-question-circle'></i>";
+                div.title = "Légende";
+                div.ariaLabel = "Légende";
+
+                let content_default = "<i class='la la-question-circle' aria-label='Légende'></i>";
                 div.innerHTML += content_default;
                 
                 div.addEventListener("click", () => {
+                    event.stopPropagation()
                     if(expand === false) {
                         expand = true;
                         // here we can fill the legend with colors, strings and whatever
@@ -1183,7 +1183,13 @@ let map_template = {
                         expand = false;
                         div.innerHTML = content_default;
                     }
-                })
+                    map.on("click", ()=>{
+                        if(expand === true) {
+                            expand = false
+                            div.innerHTML = content_default;
+                        };
+                    });
+                });
                 return div;
             };
             legend.addTo(map);
