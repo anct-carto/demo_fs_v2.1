@@ -1645,16 +1645,16 @@ let map_template = {
 
 const routes = [
     {
+        name:'carte',
+        path:'/',
+        component: map_template
+    },
+    {
         name: 'fiche',
         path: '/fiche:matricule', 
         component: pdfTemplate, 
         props:true,
     },
-    {
-        name:'carte',
-        path:'/',
-        component: map_template
-    }
 ];
 
 const router = new VueRouter({
