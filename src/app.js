@@ -1658,7 +1658,7 @@ const routes = [
 ];
 
 const router = new VueRouter({
-    mode:'history',
+    // mode:'history',
     routes // raccourci pour `routes: routes`
 })
 
