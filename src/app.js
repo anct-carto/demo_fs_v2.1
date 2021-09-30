@@ -1167,7 +1167,7 @@ let map_template = {
                 div.title = "Légende";
                 div.ariaLabel = "Légende";
 
-                let content_default = "<i class='la la-question-circle' aria-label='Légende'></i>";
+                let content_default = "<i class='la la-list' aria-label='Légende'></i>";
                 div.innerHTML += content_default;
                 
                 div.addEventListener("click", () => {
