@@ -10,7 +10,8 @@ const url = new URL(window.location.href);
 const params = url.searchParams;
 const qtype = params.get("qtype");
 
-const data_url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTYHKBasZmLcPAmjQUG08ca3R8z2VeK_ySbNZHXKWgVH7OlvrLMN3Cio3nHByxNgnK3IqoxAuOUAMCT/pub?gid=732208678&single=true&output=csv"
+// const data_url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTYHKBasZmLcPAmjQUG08ca3R8z2VeK_ySbNZHXKWgVH7OlvrLMN3Cio3nHByxNgnK3IqoxAuOUAMCT/pub?gid=732208678&single=true&output=csv"
+const data_url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRuDOzH3iy8ZNpDJiXHLyILhTgmEdeJUa7GicPR7QdEngN6d4jPMFvfERkVOTN0qal96k5aeGXtxMzA/pub?output=csv"
 let fs_tab_fetched = [];
 let page_status;
 
@@ -514,10 +515,13 @@ let cardControlBtn = {
         }
     },
     template: `
-        <button type="button" class="card-btn btn btn-outline-primary btn" @click="event.stopPropagation()" @mouseover="show=true" @mouseleave="show=false">
+        <button type="button" class="card-action-btn action btn btn-outline-primary btn" 
+                @click="event.stopPropagation()" 
+                @mouseover="show=true" @mouseleave="show=false"
+                aria-label=""
+                title="">
             <i :class="'las la-'+icon"></i>
             <span v-if="show" @mouseover="show=true" @mouseout="show=false">{{ text }}</span>
-            <span id="copied-tooltip">Lien copié!</span>
         </button>
 
     `
@@ -534,6 +538,7 @@ let card_template = {
         showInfo:false,
         hoverStyle:'',
         clicked:false,
+        showTooltip:false,
       }
     },
     components: {
@@ -581,26 +586,32 @@ let card_template = {
                 duration:1,
             });
         },
-        copyLink() {
-            event.stopPropagation()
-            linkToShare = `${url.origin}/demo_fs_v2.1/?qtype=click&matricule=${this.fs.matricule}`;
-            navigator.clipboard.writeText(linkToShare);
-            let copiedTooltip = document.getElementById("copied-tooltip");
-            copiedTooltip.style.display = "block";
-        },
-        tooltipOff() {
-            let copiedTooltip = document.getElementById("copied-tooltip");
-            copiedTooltip.style.display = "none";
+        flyOnMap() {
+            event.stopPropagation();
+            map = this.$parent.map;
+            map.panTo([this.fs.latitude, this.fs.longitude], {
+                duration:1,
+            });
         },
         print(fs) {
-            id = fs.matricule;
+            let id = fs.matricule;
             this.$htmlToPaper(id);
         },
         getPdf() {
             matricule = this.fs.matricule;
-            this.$router.push({name: 'fiche', params: { matricule: matricule, fs:this.fs }})
+            this.$router.push({name: 'fiche', params: { matricule: matricule, fs:this.fs }});
             // let route = this.$router.resolve({ path: '/fiche/', params: { matricule: matricule, fs:this.fs } }); 
             // window.open(route.href, '_blank');
+        },
+        copyLink() {
+            event.stopPropagation()
+            linkToShare = `${url.origin}/demo_fs_v2.1/?qtype=click&matricule=${this.fs.matricule}`;
+            navigator.clipboard.writeText(linkToShare);
+            let copiedTooltip = document.getElementsByClassName("copied-tooltip")[0];
+            this.showTooltip = true;
+        },
+        tooltipOff() {
+            this.showTooltip = false;
         },
     },
     template: `<div class="card result-card"
@@ -653,7 +664,7 @@ let card_template = {
                             </div>
                         </div>
                         
-                    </div>
+                    </div><br>
 <!--                    <p>
                         <i class = "las la-map-marker"></i>
                         <ul>
@@ -669,10 +680,6 @@ let card_template = {
                         </ul>
                     </p>-->
                   </div>
-                  <!--<span v-if="showInfo==false" class="collapse-text">
-                    <i class = "las la-arrow-down" v-if = "fs.telephone.length"></i>
-                    Cliquer pour afficher plus d'informations
-                  </span>-->
                   <div class="corps" v-show="showInfo">
                     <p v-if = "fs.telephone">
                       <i class = "las la-phone"></i>
@@ -721,19 +728,11 @@ let card_template = {
                     </p>
                     <div class="card-controls">
                         <control-btn :icon="'search-plus'" :text="'Zoom'" @click.native="zoomOnMap"></control-btn>
+                        <control-btn :icon="'arrows-alt'" :text="'Déplacer sur'" @click.native="flyOnMap"></control-btn>
                         <control-btn :icon="'print'" :text="'Imprimer'" @click.native="print(fs)"></control-btn>
-                        <control-btn :icon="'share'" :text="'Partager'" @click.native="copyLink" @mouseout.native="tooltipOff"></control-btn>
                         <control-btn :icon="'file-pdf'" :text="'Télécharger'" @click.native="getPdf"></control-btn>
-
-                        <!--<button type="button" class="card-btn btn btn-outline-primary btn" @click="getPdf(fs)">
-                            <i class="las la-file-download"></i>
-                            Télécharger
-                        </button>
-                        <pdf-template :fs="fs" v-if="clicked" id="coucou"></pdf-template>
-                        <button type="button" class="card-btn btn btn-outline-primary btn-block" @click="print(fs)">
-                            <i class="las la-route"></i>
-                            Calculer un itinéraire (OSM routes)
-                        </button>-->
+                        <control-btn :icon="'share'" :text="'Partager'" @click.native="copyLink" @mouseout.native="tooltipOff"></control-btn>
+                        <span class="copied-tooltip" v-if="showTooltip">Lien copié!</span>
                     </div>
                   </div>
                 </div>
@@ -850,11 +849,6 @@ let sidebar_template = {
         fromParent() {
             this.show = true;
             this.collapse = false;
-            // if(this.fromParent.length == '1') {
-            //     this.collapse = true;
-            // } else {
-            //     this.collapse = false;
-            // };
         },
         cardToHover(card_id) {
             hoveredCard = card_id;
@@ -880,6 +874,7 @@ let sidebar_template = {
         getSearchResult(result) {
             // emit search result from child to parent (map)
             this.$emit("searchResult",result);
+            this.searchResult = result;
             // this.searchType = result.resultType;
         },
         getSearchType(e) {
@@ -887,6 +882,9 @@ let sidebar_template = {
         },
         clearSearch() {
             this.$emit('clearMap');
+        },
+        zoomOnResults() {
+            this.$emit('zoomOnResults')
         },
         countNbCategory(number,category) {
             setTimeout(() => {
@@ -934,7 +932,7 @@ let sidebar_template = {
                         </span>
                     </div>
                     <div class="panel-content">
-                        <h5 style="font-family:'Marianne-Extrabold';color:red">! CETTE PAGE EST EN COURS DE DEVELOPPEMENT !</h5>
+                        <h6 style="font-family:'Marianne-Bold';color:red">! DEVELOPPEMENT EN COURS !</h6>
                         <div class="header-logo">
                             <img src="img/logo_FranceServices-01.png" id="programme-logo">
                         </div>
@@ -944,7 +942,6 @@ let sidebar_template = {
                             <card-number :nb="fsCounter('Antenne')" :category="'Antenne'" text="antennes"></card-number>
                             <card-number :nb="fsCounter('Bus')" :category="'Bus'" text="bus"></card-number>
                         </div>-->
-                        <h5 style="font-family:'Marianne-Extrabold'">Qu'est ce que France services ?</h5>
                         <p>France services est un nouveau modèle de d’accès aux services publics pour les Français. L’objectif est de permettre à chaque citoyen d’accéder aux services publics du quotidien dans un lieu unique : réaliser sa demande de carte grise, remplir sa déclaration de revenus pour les impôts sur internet ou encore effectuer sa demande d’APL. Des agents polyvalents et formés sont présents dans la France services la plus proche de chez vous pour vous accompagner dans ces démarches.</p>
                         <p>France services est un programme piloté par le <a href="https://www.cohesion-territoires.gouv.fr/" target="_blank">ministère de la Cohésion des territoires et des Relations avec les collectivités territoriales</a> via l'Agence nationale de la cohésion des territoires (ANCT).</p>
                         <button type="button" class="card-btn btn btn-outline-primary btn-home-tab" @click="openSearchPanel">
@@ -965,7 +962,7 @@ let sidebar_template = {
                         </span>
                     </div>
                     <div>
-                        <h5 style="font-family:'Marianne-Extrabold';color:red">! CETTE PAGE EST EN COURS DE DEVELOPPEMENT !</h5>
+                        <h6 style="font-family:'Marianne-Bold';color:red">! DEVELOPPEMENT EN COURS !</h6>
                         <div id="search-inputs">
                             <search-group @searchResult="getSearchResult" @searchType="getSearchType" @clearSearch="clearSearch"></search-group>
                             <slider @radiusVal="radiusVal" v-if="searchType=='address'"></slider>
@@ -975,6 +972,13 @@ let sidebar_template = {
                             <span id="nb-results" v-if="params.get('qtype')!='click'">
                                 <b>{{ fromParent.length }}</b> résultat<span v-if="fromParent.length>1">s</span>
                             </span>
+                            <button class="card-btn action btn btn-outline-primary btn"
+                                    style='float:right;margin-top:5px'
+                                    @click="zoomOnResults"
+                                    v-if="params.get('qtype')!='click'">
+                                <i class="las la-compress-arrows-alt"></i>
+                                Voir les résultats
+                            </button>
                         </div>
                         <div id="results">
                             <card v-if="show"
@@ -984,6 +988,10 @@ let sidebar_template = {
                                 :cardToHover="cardToHover"
                                 @hoverOnMap="getHoveredCard">
                             </card>
+                            <span v-else>
+                                coucou
+                                <button>retour</button>
+                            </span>
                         </div>
                         <p style="text-align:center"v-if="Array.isArray(fromParent) & fromParent.length==0">Aucun résultat ...</p>
                     </div>
@@ -1028,11 +1036,13 @@ let map_template = {
                      :cardToHover="hoveredMarker"
                      :nbFs="data"
                      :searchTypeFromMap="searchType"
-                     @clearMap="clearMap"
                      @markerToHover="getMarkertoHover" 
                      @bufferRadius="updateBuffer" 
                      @searchResult="getSearchResult"
-                     @openSearchPanel="openSearchPanel">
+                     @openSearchPanel="openSearchPanel"
+                     @zoomOnResults="zoomOnResults"
+                     @clearMap="clearMap"
+                     ref="sidebar">
             </sidebar>
             <div id="mapid" ref="map"></div>
         </div>
@@ -1175,14 +1185,14 @@ let map_template = {
                     if(expand === false) {
                         expand = true;
                         // here we can fill the legend with colors, strings and whatever
-                        div.innerHTML = `<span style="font-family:'Marianne-Bold'">Type de France services</span><br>`;
+                        div.innerHTML = `<span style="font-family:'Marianne-Bold'">Type de structure</span><br>`;
                         div.innerHTML += `<span class="leaflet-legend-marker-siege"></span><span> Site principal</span><br>`;
-                        div.innerHTML += `<span class="leaflet-legend-marker-bus"></span><span> Bus</span><br>`;
+                        div.innerHTML += `<span class="leaflet-legend-marker-bus"></span><span> Bus itinérant</span><br>`;
                         div.innerHTML += `<span class="leaflet-legend-marker-antenne"></span><span> Antenne</span><br>`;
                     } else if (expand == true) {
                         expand = false;
                         div.innerHTML = content_default;
-                    }
+                    };
                     map.on("click", ()=>{
                         if(expand === true) {
                             expand = false
@@ -1211,7 +1221,7 @@ let map_template = {
             });
         },
         flyToBoundsWithOffset(layer) {
-            offset = document.querySelector('.leaflet-sidebar-content').getBoundingClientRect().width;
+            let offset = document.querySelector('.leaflet-sidebar-content').getBoundingClientRect().width;
             this.map.flyToBounds(layer, {paddingTopLeft: [offset, 0], duration:0.75})
         },
         onMouseover(fs) {
@@ -1258,11 +1268,7 @@ let map_template = {
                     iconAnchor: [20, 40]
                 })
             }).addTo(this.map);
-            marker.bindTooltip(fs.lib_fs,{
-                className: this.getTooltipCategory(fs.type),
-                direction:'top',
-                sticky:true,
-            }).openTooltip();
+
             
             this.clickedMarkerLayer.addLayer(glow15);
             this.clickedMarkerLayer.addLayer(glow10);
@@ -1305,21 +1311,21 @@ let map_template = {
         },
         getTooltipCategory(type) {
             if(type === "Siège") {
-                return 'leaflet-tooltip-siege'
+                return 'siege'
             } else if(type === "Antenne") {
-                return 'leaflet-tooltip-antenne'
+                return 'antenne'
             } else if(type === "Bus") {
-                return 'leaflet-tooltip-bus'
+                return 'bus'
             }
         },
         getMarkertoHover(id) {
             if (id) {
-                fs = this.data.filter(e => {
+                let fs = this.data.filter(e => {
                     return e.matricule == id;
                 })[0];
 
                 this.markerToHover.coords =  [fs.latitude, fs.longitude];
-                type = fs.type;
+                let type = fs.type;
 
                 markerToHover = L.marker(this.markerToHover.coords, {
                     className:'fs-marker',
@@ -1329,12 +1335,21 @@ let map_template = {
                         iconAnchor: [20, 40]
                     })
                 }).addTo(this.map);
+                
+                let tooltipContent = `
+                                <span class='leaflet-tooltip-header ${this.getTooltipCategory(type)}'>${fs.lib_fs}</span>
+                                <span class='leaflet-tooltip-body'>${fs.code_postal} ${fs.lib_com}</span>`
 
-                markerToHover.bindTooltip(fs.lib_fs, {
-                    className: this.getTooltipCategory(type),
+                markerToHover.bindTooltip(tooltipContent, {
                     direction:'top',
                     sticky:true,
                 }).openTooltip();
+
+                // markerToHover.bindTooltip(fs.lib_fs, {
+                //     className: this.getTooltipCategory(type),
+                //     direction:'top',
+                //     sticky:true,
+                // }).openTooltip();
 
             } else {
                 markerToHover.removeFrom(this.map);
@@ -1370,6 +1385,12 @@ let map_template = {
                 });
                 this.flyToBoundsWithOffset(this.buffer);
             };
+        },
+        zoomOnResults() {
+            let bounds = this.fs_cards.map(e => {
+                return [e.latitude,e.longitude]
+            })
+            this.flyToBoundsWithOffset(bounds)
         },
         clearMap() {
             this.fs_cards = '';
@@ -1479,7 +1500,7 @@ let map_template = {
             
             // drop marker of searched address on map
             if(this.marker) {
-                address_marker = L.marker(this.marker)
+                let address_marker = L.marker(this.marker)
                                 .bindTooltip(this.marker_tooltip, {
                                     permanent:true, 
                                     direction:"top", 
@@ -1592,7 +1613,7 @@ let map_template = {
             let filteredFeature = this.geom_dep.features.filter(e => {
                 return e.properties.insee_dep === this.depFilter;
             });
-            depMask = L.mask(filteredFeature, {
+            let depMask = L.mask(filteredFeature, {
                 fillColor:'rgba(0,0,0,.25)',
                 color:'red'
             });
@@ -1604,7 +1625,7 @@ let map_template = {
             this.clearURLParams();
             this.params.set('qtype','admin');
             this.params.set('qcode',this.depFilter);
-            qlabel = filteredFeature[0].properties.lib_dep;
+            let qlabel = filteredFeature[0].properties.lib_dep;
             this.params.set('qlabel',qlabel);
             // window.history.pushState({},'',this.url);            
         },
