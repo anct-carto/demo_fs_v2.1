@@ -10,8 +10,9 @@ const url = new URL(window.location.href);
 const params = url.searchParams;
 const qtype = params.get("qtype");
 
+window.googleDocCallback = function () { return true; };
 // const data_url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTYHKBasZmLcPAmjQUG08ca3R8z2VeK_ySbNZHXKWgVH7OlvrLMN3Cio3nHByxNgnK3IqoxAuOUAMCT/pub?gid=732208678&single=true&output=csv"
-const data_url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRuDOzH3iy8ZNpDJiXHLyILhTgmEdeJUa7GicPR7QdEngN6d4jPMFvfERkVOTN0qal96k5aeGXtxMzA/pub?output=csv"
+const data_url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRuDOzH3iy8ZNpDJiXHLyILhTgmEdeJUa7GicPR7QdEngN6d4jPMFvfERkVOTN0qal96k5aeGXtxMzA/pub?output=csv&callback=googleDocCallback"
 let fs_tab_fetched = [];
 let page_status;
 
