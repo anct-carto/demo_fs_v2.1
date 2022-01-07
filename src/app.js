@@ -390,7 +390,8 @@ let pdfTemplate = {
                     iconAnchor: [16, 37]
                 })}).addTo(map).bindTooltip(fs.lib_fs, {
                     className:"leaflet-tooltip-siege",
-                    direction: 'top'
+                    direction: 'top',
+                    opacity:1
                 }).openTooltip();
                 
             html2pdf().set({
@@ -862,7 +863,7 @@ let sidebar_template = {
             final_count = this.nbFs.filter(e => {
                 return e.type == category
             }).length;
-            return final_count
+            return final_count;
         },
         getHoveredCard(id) {
             if(id) {
@@ -932,7 +933,6 @@ let sidebar_template = {
                         </span>
                     </div>
                     <div class="panel-content">
-                        <h6 style="font-family:'Marianne-Bold';color:red">! DEVELOPPEMENT EN COURS !</h6>
                         <div class="header-logo">
                             <img src="img/logo_FranceServices-01.png" id="programme-logo">
                         </div>
@@ -962,10 +962,9 @@ let sidebar_template = {
                         </span>
                     </div>
                     <div>
-                        <h6 style="font-family:'Marianne-Bold';color:red">! DEVELOPPEMENT EN COURS !</h6>
                         <div id="search-inputs">
                             <search-group @searchResult="getSearchResult" @searchType="getSearchType" @clearSearch="clearSearch"></search-group>
-                            <slider @radiusVal="radiusVal" v-if="searchType=='address'"></slider>
+                            <slider @radiusVal="radiusVal" v-if="params.get('qtype')=='address'"></slider>
                             <hr/>
                         </div>
                         <div id="search-results-header" v-if="fromParent.length>0">
@@ -1168,6 +1167,15 @@ let map_template = {
             }).addTo(map);
             this.sidebar = sidebar;
             
+            // texte en cours de développement
+            const enDeveloppement = L.control({position: 'topleft'});
+            enDeveloppement.onAdd = function() {
+                let div = L.DomUtil.create('div','en-developpement');
+                div.innerHTML += `<h5 style="font-family:'Marianne-Bold';color:red;background-color:white; padding:5px; border: solid 1px red">/!\\ DEVELOPPEMENT EN COURS /!\\</h5>`;
+                return div;
+            };
+            enDeveloppement.addTo(map);
+
             // legend
             const legend = L.control({position: 'topright'});
 
@@ -1343,6 +1351,7 @@ let map_template = {
                 markerToHover.bindTooltip(tooltipContent, {
                     direction:'top',
                     sticky:true,
+                    opacity:1
                 }).openTooltip();
 
                 // markerToHover.bindTooltip(fs.lib_fs, {
