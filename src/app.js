@@ -415,7 +415,7 @@ let pdfTemplate = {
                 <h3 style="font-family:'Marianne-Bold'">{{ fs.lib_fs }}</h3>
             </div>
             <div class="row">
-                <div class="col-sm-6">
+                <div class="col-sm-12">
                     <div class = "intro">
                         <p v-if="fs.itinerance=='oui'">
                             <i class="las la-exclamation-circle"></i> 
@@ -498,7 +498,7 @@ let pdfTemplate = {
                         </p>
                     </div>
                  </div>
-                <div class="col-sm-6">
+                <div class="col-sm-12">
                     <div id="map2" style="height:100%"></div>
                 </div>
             </div>
@@ -548,7 +548,7 @@ let card_template = {
     },
     mounted() {
         // control collapsing : if only one card is on side panel than collapse = true else false
-        if(this.collapse == true) {
+        if(this.collapse == true || params.get('qtype') == "click") {
             this.showInfo = true
         } else {
             this.showInfo = this.showInfo;
@@ -812,14 +812,14 @@ let sliderTemplate = {
     },
     template:`
         <div id="range-slider-group">
-            <span for="customRange1" class="form-label" style="font-size:1.1em">Rayon de recherche à vol d'oiseau : </span><br>
+            <span for="customRange1" class="form-label" style="font-size:1.1em;">Rayon de recherche à vol d'oiseau : </span><br>
             <span id="input-thumb" ref="bubble">{{ radiusVal }} km</span>
             <input type="range" class="form-range" 
                    id="distance-slider" 
                    v-model="radiusVal" 
                    @change="emitRadius" 
                    min="minRadiusVal" max="50" step="0.2">
-        </div>
+        </div><br>
     `
 };
 
@@ -943,7 +943,7 @@ let sidebar_template = {
                             <card-number :nb="fsCounter('Antenne')" :category="'Antenne'" text="antennes"></card-number>
                             <card-number :nb="fsCounter('Bus')" :category="'Bus'" text="bus"></card-number>
                         </div>-->
-                        <p>France services est un nouveau modèle de d’accès aux services publics pour les Français. L’objectif est de permettre à chaque citoyen d’accéder aux services publics du quotidien dans un lieu unique : réaliser sa demande de carte grise, remplir sa déclaration de revenus pour les impôts sur internet ou encore effectuer sa demande d’APL. Des agents polyvalents et formés sont présents dans la France services la plus proche de chez vous pour vous accompagner dans ces démarches.</p>
+                        <p>France services est un nouveau modèle d’accès aux services publics pour les Français. L’objectif est de permettre à chaque citoyen d’accéder aux services publics du quotidien dans un lieu unique : réaliser sa demande de carte grise, remplir sa déclaration de revenus pour les impôts sur internet ou encore effectuer sa demande d’APL. Des agents polyvalents et formés sont présents dans la France services la plus proche de chez vous pour vous accompagner dans ces démarches.</p>
                         <p>France services est un programme piloté par le <a href="https://www.cohesion-territoires.gouv.fr/" target="_blank">ministère de la Cohésion des territoires et des Relations avec les collectivités territoriales</a> via l'Agence nationale de la cohésion des territoires (ANCT).</p>
                         <button type="button" class="card-btn btn btn-outline-primary btn-home-tab" @click="openSearchPanel">
                             <i class="las la-search"></i>
@@ -965,8 +965,8 @@ let sidebar_template = {
                     <div>
                         <div id="search-inputs">
                             <search-group @searchResult="getSearchResult" @searchType="getSearchType" @clearSearch="clearSearch"></search-group>
-                            <slider @radiusVal="radiusVal" v-if="params.get('qtype')=='address'"></slider>
                             <hr/>
+                            <slider @radiusVal="radiusVal" v-if="params.get('qtype')=='address'"></slider>
                         </div>
                         <div id="search-results-header" v-if="fromParent.length>0">
                             <span id="nb-results" v-if="params.get('qtype')!='click'">
@@ -988,12 +988,8 @@ let sidebar_template = {
                                 :cardToHover="cardToHover"
                                 @hoverOnMap="getHoveredCard">
                             </card>
-                            <span v-else>
-                                coucou
-                                <button>retour</button>
-                            </span>
                         </div>
-                        <p style="text-align:center"v-if="Array.isArray(fromParent) & fromParent.length==0">Aucun résultat ...</p>
+                        <p style="text-align:center"v-if="Array.isArray(fromParent) & fromParent.length==0">Aucun résultat ... Veuillez ajuster le rayon de recherche pour avoir des résultats</p>
                     </div>
                 </div>
                 <div class="leaflet-sidebar-pane" id="a-propos">
@@ -1081,7 +1077,7 @@ let map_template = {
             markerToHover:{
                 coords:'',
             },
-            searchRadius:'',
+            searchRadius:10,
             searchType:'',
         }
     },
@@ -1555,7 +1551,7 @@ let map_template = {
             let closest_points = list_points.features;
 
             // send ids of found fs to data prop
-            closest_fs = [];
+            let closest_fs = [];
             closest_points_id = closest_points.map(e => { return e.properties.id })
 
             closest_fs = this.data.filter(e => {

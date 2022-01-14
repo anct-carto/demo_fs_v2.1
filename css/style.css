@@ -207,10 +207,9 @@ ul {
 .leaflet-tooltip {
 	padding:0;
 	text-align: center;
-	top: -30px;
+	top: -40px;
 	border:none !important;
-	box-shadow: 0 1px 2px rgba(0,0,0,.4) !important;
-	color:black ;
+	box-shadow: 0 1px 2px rgba(0,0,0,.2) !important;
 	font-family: 'Abel-Regular';
 	background-color: rgba(255,255,255,1) !important;
 }
@@ -224,6 +223,8 @@ ul {
 	font-size: 1.3em;
 	text-transform: uppercase;
 	text-align: center;
+	border-top-left-radius: 3px;
+	border-top-right-radius: 3px;
 }
 
 .leaflet-tooltip-header.siege {
@@ -242,7 +243,7 @@ ul {
 	font-size: 1.3em;
 	padding:20px;
 	padding-bottom: 30px !important;
-	color:rgb(48, 48, 48)
+	color:rgb(60, 60,60)
 }
 
 .leaflet-tooltip-result {
@@ -412,7 +413,8 @@ ul {
 	display: flex;
 	flex-wrap: wrap;
 	justify-content: space-between;
-	align-items: center;	
+	align-items: center;
+	margin-top: 10px;
 }
 
 
@@ -646,7 +648,7 @@ input[type="range"]::-moz-range-progress {
 	/* display: none; */
 	position:absolute;
 	margin-left:-85px;
-	margin-top:-30px;
+	margin-top:-32px;
 	padding: 5px 15px 5px 15px;
 	background-color: rgba(92, 92, 92,.9) !important;
 	color: white;
