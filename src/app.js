@@ -354,68 +354,66 @@ let search_group_template = {
 // ****************************************************************************
 
 let pdfTemplate = {
-    // props:["fs"],
     computed: {
         fs() {
             return this.$route.params.fs
-            // return fs_tab_fetched.filter(e => {
-            //     return e.matricule == this.$route.params.matricule
-            // });
         }
     },
     mounted() {
+        let fs = this.fs;
+        let coords = [fs.latitude,fs.longitude];
+        let map = new L.map('map2', {
+            center: [params.get("lat") || 46.413220, params.get("lng") || 1.219482],
+            zoom:params.get("z") || defaultZoomLevel,
+            preferCanvas: true,
+            zoomControl:false
+        }).setView(coords,20);
+        
+        
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{
+            zoom: 6,
+            attribution: '<a href="https://agence-cohesion-territoires.gouv.fr/" target="_blank">ANCT</a> | Fond cartographique &copy;<a href="https://stadiamaps.com/">Stadia Maps</a> &copy;<a href="https://openmaptiles.org/">OpenMapTiles</a> &copy;<a href="http://openstreetmap.org">OpenStreetMap</a>',
+        }).addTo(map);
+
+        L.control.scale({ position: 'bottomright', imperial:false }).addTo(map);
+
+        let type = fs.type;
+
+        new L.marker(coords, {
+            icon: L.icon({
+                iconUrl: './img/picto_siege.png',
+                iconSize: [32, 32],
+                iconAnchor: [16, 37]
+            })}).addTo(map).bindTooltip(fs.lib_fs, {
+                className:"leaflet-tooltip-siege",
+                direction: 'top',
+                opacity:1
+            }).openTooltip();
+            
+        html2pdf().set({
+            margin:10,
+            filename:'france-services-fiche-' + this.fs.matricule + '.pdf',
+            image: {type:'png', quality:1},
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait'},
+            html2canvas: {
+                dpi:300,
+                scale:2
+            }
+        }).from(document.body.innerHTML).save();
+
+        this.$router.back();
         setTimeout(() => {
-            let fs = this.fs;
-            let coords = [fs.latitude,fs.longitude];
-            let map = new L.map('map2', {
-                center: [params.get("lat") || 46.413220, params.get("lng") || 1.219482],
-                zoom:params.get("z") || defaultZoomLevel,
-                preferCanvas: true,
-                zoomControl:false
-            }).setView(coords,20);
-            
-            
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{
-                zoom: 6,
-                attribution: '<a href="https://agence-cohesion-territoires.gouv.fr/" target="_blank">ANCT</a> | Fond cartographique &copy;<a href="https://stadiamaps.com/">Stadia Maps</a> &copy;<a href="https://openmaptiles.org/">OpenMapTiles</a> &copy;<a href="http://openstreetmap.org">OpenStreetMap</a>',
-            }).addTo(map);
-    
-            L.control.scale({ position: 'bottomright', imperial:false }).addTo(map);
-
-            type = fs.type;
-
-            new L.marker(coords, {
-                icon: L.icon({
-                    iconUrl: './img/picto_siege.png',
-                    iconSize: [32, 32],
-                    iconAnchor: [16, 37]
-                })}).addTo(map).bindTooltip(fs.lib_fs, {
-                    className:"leaflet-tooltip-siege",
-                    direction: 'top',
-                    opacity:1
-                }).openTooltip();
-                
-            html2pdf().set({
-                filename:'france-services-fiche-' + this.fs.matricule + '.pdf',
-                image: {type:'jpg', quality:1},
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait'}
-            }).from(document.body.innerHTML).save()
-
-            this.$router.back();
-                
         }, 1000);
 
     },
     template:`
         <div class="container-sm">
             <div>
-                <img src="img/logo_anct.png" style="height:100px;margin-bottom:20px">
+                <img src="img/logo_anct.png" style="height:80px;margin-bottom:20px">
             </div>
             <div class="row">
-                <h3 style="font-family:'Marianne-Bold'">{{ fs.lib_fs }}</h3>
-            </div>
-            <div class="row">
-                <div class="col-sm-12">
+                <div class="col-12">
+                    <h3 style="font-family:'Marianne-Bold'">{{ fs.lib_fs }}</h3>
                     <div class = "intro">
                         <p v-if="fs.itinerance=='oui'">
                             <i class="las la-exclamation-circle"></i> 
@@ -498,8 +496,10 @@ let pdfTemplate = {
                         </p>
                     </div>
                  </div>
-                <div class="col-sm-12">
-                    <div id="map2" style="height:100%"></div>
+            </div>
+            <div class="row">
+                <div class="col-12">
+                    <div id="map2" style="height:300px"></div>
                 </div>
             </div>
         </div>
@@ -642,32 +642,7 @@ let card_template = {
                             <li>Cette France services est en itinérance</li>
                         </ul>
                     </p>
-                    <div class="row">
-                        <div class="col-1">
-                            <i class = "las la-map-marker"></i>
-                        </div>
-                        <div class="col-10">
-                            <div class="row">
-                                <div class="col-12">
-                                    {{ fs.adresse }} 
-                                </div>
-                            </div>
-                            <div class="row" v-if="fs.complement_adresse">
-                                <div class="col-12">
-                                    {{ fs.complement_adresse }} 
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-12">
-                                    {{ fs.code_postal }} {{ fs.lib_com }}
-                                </div>
-                            </div>
-                            <div class="row">
-                            </div>
-                        </div>
-                        
-                    </div><br>
-<!--                    <p>
+                    <p>
                         <i class = "las la-map-marker"></i>
                         <ul>
                             <li>
@@ -680,7 +655,7 @@ let card_template = {
                                 {{ fs.code_postal }} {{ fs.lib_com }}
                             </li>
                         </ul>
-                    </p>-->
+                    </p>
                   </div>
                   <div class="corps" v-show="showInfo">
                     <p v-if = "fs.telephone">
@@ -717,7 +692,7 @@ let card_template = {
                                 <b>Samedi : </b>{{ fs.h_samedi }} 
                             </li>
                         </ul>
-                        </p>
+                    </p>
                     <p v-if="fs.commentaire_horaires">
                         <i class = "las la-info-circle"></i>                    
                         <ul>
