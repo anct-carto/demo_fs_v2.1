@@ -195,7 +195,6 @@ let search_group_template = {
                     return type = "Lieu-dit";
                 case "municipality":
                     return type = "Commune";
-                    break;
             };
         },
         onChange(e) {
@@ -397,11 +396,13 @@ let pdfTemplate = {
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait'},
             html2canvas: {
                 dpi:300,
-                scale:2
+                // scale:2
             }
         }).from(document.body.innerHTML).save();
 
-        this.$router.back();
+        this.$router.push({path:'/'})
+
+        // this.$router.back();
         setTimeout(() => {
         }, 1000);
 
@@ -499,7 +500,7 @@ let pdfTemplate = {
             </div>
             <div class="row">
                 <div class="col-12">
-                    <div id="map2" style="height:300px"></div>
+                    <div id="map2" style="height:250px"></div>
                 </div>
             </div>
         </div>
