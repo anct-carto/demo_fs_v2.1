@@ -338,6 +338,11 @@ ul {
 	height: 25px;
 }
 
+
+#search-type-text {
+	font-family: "Marianne-Bold";
+}
+
 .search-type-btn {
 	padding-top:3px;
 	padding-bottom:4px;
@@ -529,6 +534,19 @@ input[type="range"]::-moz-range-progress {
 	box-shadow: 0 10px 10px rgba(0,0,0,.08), 0 4px 8px rgba(0,0,0,.1);
 }
 
+
+.nb-result-per-type {
+	display: inline-block;
+	width: 30% !important;
+	padding: 2px 0 2px 0;
+	border-radius:8px;
+	color:white;
+	margin-right:10px;
+	font-size:1.05em;
+	text-align:center;
+}
+
+
 .hovered {
 	border:solid 1px red;
 }
@@ -665,6 +683,15 @@ input[type="range"]::-moz-range-progress {
 	border-style: solid;
 	border-color: rgba(92, 92, 92,.9) transparent transparent transparent;
   }
+
+/* -------------------------------------------------------------------------- */
+/* 								 SCROLL BAR						   	 		  */													
+/* -------------------------------------------------------------------------- */
+
+#fiche-pdf {
+	line-height: 15pt;
+}
+
 
 /* -------------------------------------------------------------------------- */
 /* 								 SCROLL BAR						   	 		  */													

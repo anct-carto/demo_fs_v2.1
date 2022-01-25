@@ -21,8 +21,13 @@
     <script src="lib/vue.min.js"></script>
     <script src="https://unpkg.com/vue-router/dist/vue-router.js"></script>
     <script src="lib/leaflet.js"></script>
+    <!-- pdf -->
     <script src="lib/vue-html-to-paper.js"></script>
     <script src="lib/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/2.3.4/purify.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.0/html2canvas.min.js" integrity="sha512-UcDEnmFoMh0dYHu0wGsf5SKB7z7i5j3GuXHCnb3i4s44hfctoLihr896bxM0zL7jGkcHQXXrJsFIL62ehtd6yQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.0/jspdf.umd.min.js"></script>
+    <script src="lib/Marianne-Regular-normal.js"></script>
     <!-- bootstrap -->
     <script src="lib/jquery.min.js"></script>
     <script src="lib/bootstrap.bundle.min.js"></script>
@@ -46,10 +51,16 @@
         <p>Chargement des données en cours ...</p>
       </div>
     </div>
+    <!-- <div class="w-100 h-100 d-flex flex-column justify-content-center align-items-center" id = "error" style="display:none">
+      <div class="row">
+        <p>Une erreur technique est survenue. Veuillez réessayer dans quelques minutes</p>
+      </div>
+    </div> -->
     <div id="app">
       <router-view></router-view>
     </div>
     <!-- chargement script js -->
     <script src= "src/app.js"></script>
+    <script src= "src/routes.js"></script>
   </body>
 </html>

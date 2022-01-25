@@ -94,7 +94,7 @@ let loadingScreen = {
 
 
 
-let search_group_template = {
+let searchGroupComponent = {
     template: `
             <div id="search-bar-container">
                 <div id = "search-type-group">
@@ -164,7 +164,7 @@ let search_group_template = {
             if(this.searchType == "address") {
                 return "Saisissez une adresse ..."
             } else {
-                return "Saisissez un nom ou numéro de département ..."
+                return "Saisissez un nom ou code de département ..."
             }
         },
         searchType() {
@@ -183,6 +183,27 @@ let search_group_template = {
                 this.suggestionsList = [];
             }
         }
+    },
+    mounted() {
+        document.addEventListener("click", this.handleClickOutside);
+        document.addEventListener("keyup", (e) => {
+            if(e.key === "Escape") {
+                this.isOpen = false;
+                this.index = -1;
+
+            }
+        });
+        
+    },
+    destroyed() {
+        document.removeEventListener("click", this.handleClickOutside);
+        document.removeEventListener("keyup", (e) => {
+            if(e.key === "Escape") {
+                this.isOpen = false;
+                this.index = -1
+                this.handleClickOutside();
+            }
+        });
     },
     methods: {
         returnType(type) {
@@ -323,28 +344,6 @@ let search_group_template = {
             this.$emit('clearSearch')
         }
     },
-    mounted() {
-        document.addEventListener("click", this.handleClickOutside);
-        document.addEventListener("keyup", (e) => {
-            if(e.key === "Escape") {
-                this.isOpen = false;
-                this.index = -1;
-
-            }
-        });
-        
-    },
-    destroyed() {
-        document.removeEventListener("click", this.handleClickOutside);
-        document.removeEventListener("keyup", (e) => {
-            if(e.key === "Escape") {
-                this.isOpen = false;
-                this.index = -1
-                this.handleClickOutside();
-            }
-        });
-    }
-
 };
 
 
@@ -352,119 +351,134 @@ let search_group_template = {
 
 // ****************************************************************************
 
-let pdfTemplate = {
+window.jsPDF = window.jspdf.jsPDF
+
+let pdfComponent = {
     computed: {
         fs() {
             return this.$route.params.fs
+        },
+        tooltipType() {
+            let type = this.fs.type;
+            if(type === "Siège") {
+                return 'siege'
+            } else if(type === "Antenne") {
+                return 'antenne'
+            } else if(type === "Bus") {
+                return 'bus'
+            }
+        },
+        date() {
+            let todayDate = new Date(Date.now());
+            return todayDate.toLocaleDateString()
         }
     },
     mounted() {
         let fs = this.fs;
         let coords = [fs.latitude,fs.longitude];
-        let map = new L.map('map2', {
+        let map = new L.map('map-pdf', {
             center: [params.get("lat") || 46.413220, params.get("lng") || 1.219482],
             zoom:params.get("z") || defaultZoomLevel,
             preferCanvas: true,
             zoomControl:false
-        }).setView(coords,20);
+        }).setView(coords,16);
         
         
         L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{
-            zoom: 6,
             attribution: '<a href="https://agence-cohesion-territoires.gouv.fr/" target="_blank">ANCT</a> | Fond cartographique &copy;<a href="https://stadiamaps.com/">Stadia Maps</a> &copy;<a href="https://openmaptiles.org/">OpenMapTiles</a> &copy;<a href="http://openstreetmap.org">OpenStreetMap</a>',
         }).addTo(map);
 
         L.control.scale({ position: 'bottomright', imperial:false }).addTo(map);
 
-        let type = fs.type;
+        let tooltipContent = `
+        <span class='leaflet-tooltip-header ${this.tooltipType}'>${fs.lib_fs}</span>
+        <span class='leaflet-tooltip-body'>${fs.code_postal} ${fs.lib_com}</span>`;
 
         new L.marker(coords, {
             icon: L.icon({
                 iconUrl: './img/picto_siege.png',
-                iconSize: [32, 32],
-                iconAnchor: [16, 37]
-            })}).addTo(map).bindTooltip(fs.lib_fs, {
-                className:"leaflet-tooltip-siege",
-                direction: 'top',
-                opacity:1
-            }).openTooltip();
-            
-        html2pdf().set({
-            margin:10,
-            filename:'france-services-fiche-' + this.fs.matricule + '.pdf',
-            image: {type:'png', quality:1},
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait'},
-            html2canvas: {
-                dpi:300,
-                // scale:2
-            }
-        }).from(document.body.innerHTML).save();
+                iconSize: [40, 40],
+                iconAnchor: [20, 40]
+            })
+        }).addTo(map)
 
-        this.$router.push({path:'/'})
-
-        // this.$router.back();
         setTimeout(() => {
-        }, 1000);
+            let router = this.$router;
+
+            let pdf = new jsPDF('p','mm',[210,297]);
+            pdf.setFont("Marianne-Regular");
+            
+            let htmlToPrint = this.$el;
+
+            let outputFileName = 'france-services-fiche-' + this.fs.matricule + '.pdf'
+            
+            pdf.html(htmlToPrint, {
+                margin:[5,16,0,16],
+                html2canvas: {
+                    scale:0.25
+                },
+                callback:function(pdf) {
+                    pdf.save(outputFileName)
+                    router.push({path:'/'})
+                }
+            });
+        }, 500);
+
 
     },
     template:`
-        <div class="container-sm">
+        <div class="container-sm" id="fiche-pdf" style="font-family:'Marianne-Regular'">
             <div>
-                <img src="img/logo_anct.png" style="height:80px;margin-bottom:20px">
+                <img src="img/logo_anct.png" style="height:110px;margin-bottom:40px;margin-left:-30px">
+                <!--<img src="img/logo_FranceServices-01.png" style="height:150px;margin-bottom:40px;">-->
             </div>
-            <div class="row">
-                <div class="col-12">
-                    <h3 style="font-family:'Marianne-Bold'">{{ fs.lib_fs }}</h3>
+            <div class="row" style="background:rgb(254,254,254);font-size:.9em">
+                <div class="col-8 p-0">
+                    <span style="font-size:.8em">Fiche d'identité France services - téléchargée le {{ date }}</span>
+                    <h2 style='font-weight:bolder'><b>{{ fs.lib_fs }}</b></h2><br>
                     <div class = "intro">
                         <p v-if="fs.itinerance=='oui'">
-                            <i class="las la-exclamation-circle"></i> 
-                            <ul>
-                                <li>Cette France services est en itinérance</li>
-                            </ul>
+                            <!--<i class="las la-exclamation-circle"></i> -->
+                            <span>Attention : cette France services est en itinérance</span>
                         </p>
-                        <p>
-                            <h5>
-                                <i class = "las la-map-marker"></i>
-                                <b>Adresse</b>
-                            </h5>
-                            <ul>
-                                <li>
-                                    {{ fs.adresse }} 
-                                </li>
-                                <li v-if = "fs.complement_adresse.length">
-                                    {{ fs.complement_adresse }} 
-                                </li>
-                                <li>
-                                    {{ fs.code_postal }} {{ fs.lib_com }}
-                                </li>
-                            </ul>
-                        </p>
-                    </div>
+                        <div class="row">
+                            <div class="col-5">
+                                <h5>
+                                    <!--<i class = "las la-map-marker"></i>-->
+                                    <b>Adresse</b>
+                                </h5>
+                                <div>
+                                    <span>
+                                        {{ fs.adresse }} <br>
+                                    </span>
+                                    <span v-if = "fs.complement_adresse.length">
+                                        {{ fs.complement_adresse }}<br>
+                                    </span>
+                                    <span>
+                                        {{ fs.code_postal }} {{ fs.lib_com }}
+                                    </span>
+                                </div><br>
+                                <div>
+                                    <h5>
+                                        <!--<i class = "las la-phone"></i>-->
+                                        <b>Contact</b>
+                                    </h5>
+                                    <span v-if = "fs.telephone"><b>Téléphone : </b>{{ fs.telephone }}</span><br>
+                                    <span v-if = "fs.mail"><b>Courriel : </b><a v-bind:href = "'mailto:' + fs.mail" target = "_blank">{{ fs.mail }}</a></span>
+                                </div><br>
+                            </div>
+                            <div class="col-6">
+                                <div id="map-pdf" style="height:300px"></div>
+                            </div>
+                        </div>
+                    </div><br>
                     <div class="corps">
-                        <p v-if = "fs.telephone">
-                            <h5>
-                                <i class = "las la-phone"></i>
-                                <b>Téléphone</b>
-                            </h5>
-                            <ul>
-                            <li>{{ fs.telephone }}</li>
-                            </ul>
-                        </p>
-                        <p v-if = "fs.mail">
-                            <h5>
-                                <i class = "las la-at card-icon" ></i>
-                                <b>Courriel</b>
-                            </h5>
-                            <ul>
-                                <li><a v-bind:href = "'mailto:' + fs.mail" target = "_blank">{{ fs.mail }}</a></li>
-                            </ul>
-                        </p>
                         <p>
                             <h5>
-                                <i class = "las la-clock"></i>
+                                <!--<i class = "las la-clock"></i>-->
                                 <b>Horaires d'ouverture</b>
                             </h5>
-                            <ul>
+                            <ul style="list-style: none;display: inline-block;padding-left: 5px;">
                                 <li>
                                     <b>Lundi : </b>{{ fs.h_lundi }} 
                                 </li>
@@ -485,23 +499,13 @@ let pdfTemplate = {
                                 </li>
                             </ul>
                         </p>
-                        <p v-if="fs.commentaire_horaires">
-                            <i class = "las la-info-circle"></i>                    
-                            <ul>
-                                <li>{{ fs.commentaire_horaires }}</li>
-                            </ul>
-                        </p>
-                        <p v-if="fs.groupe">
-                            <i class="las la-share-alt"></i>
-                            Cette structure fait partie du réseau "{{ fs.groupe }}"
-                        </p>
+                        <div v-if="fs.commentaire_horaires">
+                            <!--<i class = "las la-info-circle"></i>-->
+                            <h5><b>Commentaire(s)</b></h5>
+                            <span>{{ fs.commentaire_horaires }}</span>
+                        </div>
                     </div>
                  </div>
-            </div>
-            <div class="row">
-                <div class="col-12">
-                    <div id="map2" style="height:250px"></div>
-                </div>
             </div>
         </div>
     `
@@ -534,7 +538,7 @@ let cardControlBtn = {
 // ****************************************************************************
 
 
-let card_template = {
+let cardTemplate = {
     props: ['fs', 'cardToHover', 'collapse'],
     data () {
       return {
@@ -554,6 +558,11 @@ let card_template = {
         } else {
             this.showInfo = this.showInfo;
         }
+        document.addEventListener("selectionchange",event=>{
+            // this.showInfo = false;
+            // let selection = document.getSelection ? document.getSelection().toString() :  document.selection.createRange().toString() ;
+            // console.log(selection);
+        })
     },
     methods: {
         getClass() {
@@ -603,14 +612,12 @@ let card_template = {
         getPdf() {
             matricule = this.fs.matricule;
             this.$router.push({name: 'fiche', params: { matricule: matricule, fs:this.fs }});
-            // let route = this.$router.resolve({ path: '/fiche/', params: { matricule: matricule, fs:this.fs } }); 
-            // window.open(route.href, '_blank');
         },
         copyLink() {
             event.stopPropagation()
-            linkToShare = `${url.origin}/demo_fs_v2.1/?qtype=click&matricule=${this.fs.matricule}`;
+            let linkToShare = `${url.origin}/demo_fs_v2.1/?qtype=click&matricule=${this.fs.matricule}`;
             navigator.clipboard.writeText(linkToShare);
-            let copiedTooltip = document.getElementsByClassName("copied-tooltip")[0];
+            // let copiedTooltip = document.getElementsByClassName("copied-tooltip")[0];
             this.showTooltip = true;
         },
         tooltipOff() {
@@ -707,9 +714,9 @@ let card_template = {
                     <div class="card-controls">
                         <control-btn :icon="'search-plus'" :text="'Zoom'" @click.native="zoomOnMap"></control-btn>
                         <control-btn :icon="'arrows-alt'" :text="'Déplacer sur'" @click.native="flyOnMap"></control-btn>
-                        <control-btn :icon="'print'" :text="'Imprimer'" @click.native="print(fs)"></control-btn>
+                        <!--<control-btn :icon="'print'" :text="'Imprimer'" @click.native="print(fs)"></control-btn>-->
                         <control-btn :icon="'file-pdf'" :text="'Télécharger'" @click.native="getPdf"></control-btn>
-                        <control-btn :icon="'share'" :text="'Partager'" @click.native="copyLink" @mouseout.native="tooltipOff"></control-btn>
+                        <control-btn :icon="'clipboard'" :text="'Partager'" @click.native="copyLink" @mouseout.native="tooltipOff"></control-btn>
                         <span class="copied-tooltip" v-if="showTooltip">Lien copié!</span>
                     </div>
                   </div>
@@ -749,22 +756,18 @@ let cardNumber = {
 // ****************************************************************************
 
 
-let sliderTemplate = {
+
+
+// ****************************************************************************
+
+
+let sliderComponent = {
     data() {
         return {
             radiusVal:'',
             minRadiusVal:0,
             maxRadiusVal:50
         }
-    },
-    methods: {
-        emitRadius() {
-                if(params.has("qlatlng")) {
-                    params.set("qr",this.radiusVal);
-                    window.history.pushState({},'',url);
-                };
-            this.$emit("radiusVal",this.radiusVal);      
-        },
     },
     watch: {
         radiusVal() {
@@ -786,6 +789,15 @@ let sliderTemplate = {
         this.emitRadius();
         
     },
+    methods: {
+        emitRadius() {
+                if(params.has("qlatlng")) {
+                    params.set("qr",this.radiusVal);
+                    window.history.pushState({},'',url);
+                };
+            this.$emit("radiusVal",this.radiusVal);      
+        },
+    },
     template:`
         <div id="range-slider-group">
             <span for="customRange1" class="form-label" style="font-size:1.1em;">Rayon de recherche à vol d'oiseau : </span><br>
@@ -802,12 +814,52 @@ let sliderTemplate = {
 
 // ****************************************************************************
 
-let sidebar_template = {
+let resultsCountComponent = {
+    props:['nbResults','type'],
+    computed: {
+        styleSheet() {
+            return {
+                background:this.color
+            }
+        },
+        color() {
+            switch (this.type) {
+                case "siege":
+                    return "rgb(41,49,115)";
+                case "bus":
+                    return "#00ac8c";
+                case "antenne":
+                    return "#5770be";
+            }
+        },
+        text() {
+            switch (this.type) {
+                case "siege":
+                    return 'fixe';
+                case "bus":
+                    return "itinérante";
+                case "antenne":
+                    return "antenne";
+            }
+        }
+    },
+    template: `
+        <span class="nb-result-per-type" :style="styleSheet">
+            <b>{{ nbResults }}</b> {{ text }}<span v-if="nbResults>1">s</span>
+        </span>
+    `
+}
+
+
+// ****************************************************************************
+
+let sidebarComponent = {
     components: {
-        'search-group':search_group_template,
-        'card':card_template,
+        'search-group':searchGroupComponent,
+        'card':cardTemplate,
         'card-number':cardNumber,
-        'slider':sliderTemplate,
+        'slider':sliderComponent,
+        'result-count':resultsCountComponent,
     },
     props: ['fromParent', 'cardToHover', 'nbFs','searchTypeFromMap'],
     data() {
@@ -822,6 +874,13 @@ let sidebar_template = {
         map() {
             return this.$parent.map;
         },
+        nbResults() {
+            return {
+                siege:this.countResultByType("Siège"),
+                bus:this.countResultByType("Bus"),
+                antenne:this.countResultByType("Antenne")
+            }
+        }
     },
     watch: {
         fromParent() {
@@ -841,6 +900,12 @@ let sidebar_template = {
                 return e.type == category
             }).length;
             return final_count;
+        },
+        countResultByType(type) {
+            let nb = this.fromParent.filter(e => {
+                return e.type == type
+            }).length;
+            return nb
         },
         getHoveredCard(id) {
             if(id) {
@@ -882,7 +947,7 @@ let sidebar_template = {
         },
         openSearchPanel() {
             this.$emit("openSearchPanel")
-        }
+        },
     },
     template: ` 
         <div id="sidebar" class="leaflet-sidebar collapsed">
@@ -913,8 +978,7 @@ let sidebar_template = {
                         <div class="header-logo">
                             <img src="img/logo_FranceServices-01.png" id="programme-logo">
                         </div>
-                        <!--
-                        <div class="row">
+                        <!--<div class="row">
                             <card-number :nb="fsCounter('Siège')" :category="'Siège'" text="structures"></card-number>
                             <card-number :nb="fsCounter('Antenne')" :category="'Antenne'" text="antennes"></card-number>
                             <card-number :nb="fsCounter('Bus')" :category="'Bus'" text="bus"></card-number>
@@ -956,7 +1020,21 @@ let sidebar_template = {
                                 Voir les résultats
                             </button>
                         </div>
-                        <div id="results">
+                        <div id="results" v-if="fromParent.length >0">
+                            <div style="margin-bottom:15px" v-if="params.get('qtype')!='click'">
+                                <result-count :nbResults="nbResults.siege" 
+                                            :type="'siege'" 
+                                            v-if="nbResults.siege">
+                                </result-count>
+                                <result-count :nbResults="nbResults.bus" 
+                                            :type="'bus'" 
+                                            v-if="nbResults.bus">
+                                </result-count>
+                                <result-count :nbResults="nbResults.antenne"
+                                            :type="'antenne'" 
+                                            v-if="nbResults.antenne">
+                                </result-count>
+                            </div>
                             <card v-if="show"
                                 v-for="(fs, index) in fromParent"
                                 :collapse="collapse"
@@ -965,7 +1043,9 @@ let sidebar_template = {
                                 @hoverOnMap="getHoveredCard">
                             </card>
                         </div>
-                        <p style="text-align:center"v-if="Array.isArray(fromParent) & fromParent.length==0">Aucun résultat ... Veuillez ajuster le rayon de recherche pour avoir des résultats</p>
+                        <p style="text-align:center"v-if="Array.isArray(fromParent) & fromParent.length==0">
+                            <br>Aucun résultat ... Veuillez ajuster le rayon de recherche
+                        </p>
                     </div>
                 </div>
                 <div class="leaflet-sidebar-pane" id="a-propos">
@@ -1001,7 +1081,7 @@ let sidebar_template = {
 
 let markerToHover;
 
-let map_template = {
+let mapComponent = {
     template: `
         <div>
             <sidebar :fromParent="fs_cards" 
@@ -1019,28 +1099,29 @@ let map_template = {
             <div id="mapid" ref="map"></div>
         </div>
     `,
+    components: {
+        'sidebar': sidebarComponent,
+    },
     data() {
         return {
             mapOptions: {
                 url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-                zoom: 6,
                 attribution: '<a href="https://cartotheque.anct.gouv.fr/cartes" target="_blank">ANCT</a> | Fond cartographique &copy;<a href="https://stadiamaps.com/">Stadia Maps</a> &copy;<a href="https://openmaptiles.org/">OpenMapTiles</a> &copy;<a href="http://openstreetmap.org">OpenStreetMap</a>',
+                zoom: 6,
                 center: [46.413220, 1.219482],
                 zoomSnap: 0.25,
                 zoomControl: false,
-                preferCanvas: true
             },
             data: fs_tab_fetched,
-            circles: {
+            circlesStyle: {
                 radius:5.5,
                 color:'white',
-                weight:1,
+                weight:1.2,
                 fillOpacity:1,
                 className:'fs-marker',
             },
             tooltipOptions: {
                 direction:'top',
-                sticky:true,
                 className:'leaflet-tooltip-hovered',
             },
             hoveredMarker:'',
@@ -1056,9 +1137,6 @@ let map_template = {
             searchRadius:10,
             searchType:'',
         }
-    },
-    components: {
-        'sidebar': sidebar_template,
     },
     computed: {
         adressLayer() {
@@ -1086,392 +1164,6 @@ let map_template = {
                 // console.log("iframe : false")
                 return false;
             };
-        },
-    },
-    methods: {
-        initMap() {
-            this.params = params;
-            this.url = url;
-
-            searchQuery = document.getElementById('search-field');
-            searchQuery.value = params.get("qlabel") || "";
-
-            let defaultZoomLevel = this.iframe ? 6 : 5.55;
-
-            // const map = L.map('mapid', this.mapOptions);
-            const map = new L.map('mapid', {
-                center: [params.get("lat") || 46.413220, params.get("lng") || 1.219482],
-                zoom:params.get("z") || defaultZoomLevel,
-                preferCanvas: true,
-                zoomControl:false
-            });
-
-            // Get url parameters
-            map.on("moveend", () => {
-                // get map params
-                lat = map.getCenter().lat.toFixed(6);
-                lng = map.getCenter().lng.toFixed(6);
-                zoom = map.getZoom();
-
-                params.set("lat",lat);
-                params.set("lng",lng);
-                params.set("z",zoom);
-             
-                window.history.pushState({},'',url)
-            });
-            
-            // this.iframe ? map.setZoom(6) : map.setZoom(5.55);
-            L.tileLayer(this.mapOptions.url,{ attribution:this.mapOptions.attribution }).addTo(map);
-            this.map = map;
-            // zoom control, fullscreen & scale bar
-            L.control.zoom({position: 'topright'}).addTo(map);
-            L.control.fullscreen({
-                position:'topright',
-                forcePseudoFullScreen:true,
-            }).addTo(this.map);
-            L.control.scale({ position: 'bottomright', imperial:false }).addTo(map);
-
-            // sidebar
-            const sidebar = window.L.control.sidebar({
-                autopan: true, 
-                closeButton: true, 
-                container: "sidebar", 
-                position: "left"
-            }).addTo(map);
-            this.sidebar = sidebar;
-            
-            // texte en cours de développement
-            const enDeveloppement = L.control({position: 'topleft'});
-            enDeveloppement.onAdd = function() {
-                let div = L.DomUtil.create('div','en-developpement');
-                div.innerHTML += `<h5 style="font-family:'Marianne-Bold';color:red;background-color:white; padding:5px; border: solid 1px red">/!\\ DEVELOPPEMENT EN COURS /!\\</h5>`;
-                return div;
-            };
-            enDeveloppement.addTo(map);
-
-            // legend
-            const legend = L.control({position: 'topright'});
-
-            legend.onAdd = function (map) {
-                let expand = false;
-                var div = L.DomUtil.create('div', 'leaflet-legend');
-                div.title = "Légende";
-                div.ariaLabel = "Légende";
-
-                let content_default = "<i class='la la-list' aria-label='Légende'></i>";
-                div.innerHTML += content_default;
-                
-                div.addEventListener("click", () => {
-                    event.stopPropagation()
-                    if(expand === false) {
-                        expand = true;
-                        // here we can fill the legend with colors, strings and whatever
-                        div.innerHTML = `<span style="font-family:'Marianne-Bold'">Type de structure</span><br>`;
-                        div.innerHTML += `<span class="leaflet-legend-marker-siege"></span><span> Site principal</span><br>`;
-                        div.innerHTML += `<span class="leaflet-legend-marker-bus"></span><span> Bus itinérant</span><br>`;
-                        div.innerHTML += `<span class="leaflet-legend-marker-antenne"></span><span> Antenne</span><br>`;
-                    } else if (expand == true) {
-                        expand = false;
-                        div.innerHTML = content_default;
-                    };
-                    map.on("click", ()=>{
-                        if(expand === true) {
-                            expand = false
-                            div.innerHTML = content_default;
-                        };
-                    });
-                });
-                return div;
-            };
-            legend.addTo(map);
-
-            // on click remove previous clicked marker
-            map.on("click",(e) => {
-                if(map.hasLayer(this.clickedMarkerLayer)) {
-                    // this.clickedMarkerLayer.clearLayers();
-                };
-                event.stopPropagation();
-            })
-        },
-        loadDep() {
-            fetch("data/geom_dep.geojson")
-            .then(res => res.json())
-            .then(res => {
-                this.geom_dep = res;
-                sessionStorage.setItem("LocalGeomDep",JSON.stringify(res))
-            });
-        },
-        flyToBoundsWithOffset(layer) {
-            let offset = document.querySelector('.leaflet-sidebar-content').getBoundingClientRect().width;
-            this.map.flyToBounds(layer, {paddingTopLeft: [offset, 0], duration:0.75})
-        },
-        onMouseover(fs) {
-            this.markerToHover.coords = [fs.latitude, fs.longitude];
-            this.markerToHover.lib = fs.lib_fs;
-            
-            id = fs.matricule;
-            if(this.fs_cards) {
-                this.hoveredMarker = id; // send hovered marker's ID to children cards 
-            };
-        },
-        onMouseOut() {
-            this.hoveredMarker = '';
-            this.markerToHover.coords = '';
-            this.markerToHover.lib = '';
-            this.getMarkertoHover('');  
-        },
-        displayInfo(fs) {
-            this.sidebar.open('search-tab');          
-            // send info of the one clicked point to children (cards)
-            if(fs.distance) {
-                delete fs.distance;
-            };
-            this.fs_cards = [fs];
-            
-            // add white stroke to clicked
-            this.clickedMarkerLayer.clearLayers();
-            let glowStyle = {
-                radius:10,
-                weight:10,
-                color:'rgba(245,245,245,.75)',
-                fillColor:this.getMarkerColor(fs.type),
-                fillOpacity:1,
-                interactive:false
-            };
-            let glow10 = new L.circleMarker([fs.latitude, fs.longitude], glowStyle, { weight:10 });
-            let glow15 = new L.circleMarker([fs.latitude, fs.longitude], glowStyle, { weight:15 });
-
-            // add marker icon
-            let marker = new L.marker([fs.latitude, fs.longitude], {
-                icon:L.icon({
-                    iconUrl:this.getIconCategory(fs.type),  
-                    iconSize: [40, 40],
-                    iconAnchor: [20, 40]
-                })
-            }).addTo(this.map);
-
-            
-            this.clickedMarkerLayer.addLayer(glow15);
-            this.clickedMarkerLayer.addLayer(glow10);
-            this.clickedMarkerLayer.addLayer(marker);
-
-            // remove buffer and address marker
-            this.maskLayer.clearLayers();
-            this.adressLayer.clearLayers();
-
-            // setup url params
-            this.clearURLParams();
-            this.params.set("lat", this.map.getCenter().lat.toFixed(6))
-            this.params.set("lng", this.map.getCenter().lng.toFixed(6))
-            this.params.set("z", this.map.getZoom())
-            this.params.set("qtype","click");
-            this.params.set("matricule",fs.matricule);
-            window.history.pushState({},'',this.url);
-        },
-        // styles
-        getMarkerColor(type) {
-            switch (type) {
-                case "Siège":
-                    return "rgb(41,49,115)";
-                case "Antenne":
-                    return "#5770be";
-                case "Bus":
-                    return "#00ac8c";
-                    break;
-            };
-        },
-        getIconCategory(type) {
-            if(type === "Siège") {
-                return './img/picto_siege.png'
-            } else if(type === "Antenne"){
-                return './img/picto_antenne.png'
-            } 
-            else if(type === "Bus"){
-                return './img/picto_itinerante.png'
-            }
-        },
-        getTooltipCategory(type) {
-            if(type === "Siège") {
-                return 'siege'
-            } else if(type === "Antenne") {
-                return 'antenne'
-            } else if(type === "Bus") {
-                return 'bus'
-            }
-        },
-        getMarkertoHover(id) {
-            if (id) {
-                let fs = this.data.filter(e => {
-                    return e.matricule == id;
-                })[0];
-
-                this.markerToHover.coords =  [fs.latitude, fs.longitude];
-                let type = fs.type;
-
-                markerToHover = L.marker(this.markerToHover.coords, {
-                    className:'fs-marker',
-                    icon:L.icon({
-                        iconUrl:this.getIconCategory(type),  
-                        iconSize: [40, 40],
-                        iconAnchor: [20, 40]
-                    })
-                }).addTo(this.map);
-                
-                let tooltipContent = `
-                                <span class='leaflet-tooltip-header ${this.getTooltipCategory(type)}'>${fs.lib_fs}</span>
-                                <span class='leaflet-tooltip-body'>${fs.code_postal} ${fs.lib_com}</span>`
-
-                markerToHover.bindTooltip(tooltipContent, {
-                    direction:'top',
-                    sticky:true,
-                    opacity:1
-                }).openTooltip();
-
-                // markerToHover.bindTooltip(fs.lib_fs, {
-                //     className: this.getTooltipCategory(type),
-                //     direction:'top',
-                //     sticky:true,
-                // }).openTooltip();
-
-            } else {
-                markerToHover.removeFrom(this.map);
-                this.markerToHover.coords = '';
-                this.markerToHover.lib = '';
-            }
-        },
-        getSearchResult(e) {
-            // get result infos emitted from search group
-            if(e.resultType == "address") {
-                this.marker = e.resultCoords;
-                this.marker_tooltip = e.resultLabel;
-            } else {
-                if(this.geom_dep) {
-                    this.depFilter = e.resultCode;
-                }
-            }
-        },
-        updateBuffer(new_radius) {
-            this.searchRadius = new_radius;
-            if(this.buffer) {
-                this.buffer.setRadius(new_radius*1000);
-                this.fs_cards = this.data.filter(e => {
-                    return e.distance <= new_radius
-                }).sort((a,b) => {
-                    if(a.distance > b.distance) {
-                        return 1;
-                    } else if (a.distance < b.distance) {
-                        return -1
-                    } else if (a.distance === b.distance) {
-                        return 0
-                    }
-                });
-                this.flyToBoundsWithOffset(this.buffer);
-            };
-        },
-        zoomOnResults() {
-            let bounds = this.fs_cards.map(e => {
-                return [e.latitude,e.longitude]
-            })
-            this.flyToBoundsWithOffset(bounds)
-        },
-        clearMap() {
-            this.fs_cards = '';
-            this.markerToHover.coordinates = '';
-            this.clickedMarkerLayer.clearLayers();
-            this.maskLayer.clearLayers();
-            this.adressLayer.clearLayers();
-            this.map.flyTo(this.mapOptions.center, this.mapOptions.zoom, {duration:0.5});
-
-            // purge url params
-            this.clearURLParams();
-        },
-        clearURLParams() {
-           this.url.search = '';
-        },
-        openSearchPanel() {
-            this.sidebar.open('search-tab')
-        },
-        checkURLParams() {
-            let params = this.params;
-            queryType = params.get("qtype");
-            if(queryType) {
-                this.sidebar.open("search-tab");
-            }
-            switch (queryType) {
-                case "address":
-                    let resultMarker = params.get("qlatlng").split(",");
-                    let resultLabel = params.get("qlabel");    
-                    this.marker = resultMarker;
-                    this.marker_tooltip = resultLabel;                    
-                    this.sidebar.open("search-tab");
-                    break;
-                case "admin":
-                    let resultCodeDep = params.get("qcode");
-                    console.log(resultCodeDep);
-                    this.depFilter = resultCodeDep;
-                    this.sidebar.open("search-tab");
-                break;
-                case "click":
-                    let id = params.get("matricule");
-                    let fs = fs_tab_fetched.filter(e => e.matricule == id)[0];
-                    this.displayInfo(fs);                    
-                    center = this.map.getCenter();
-                    this.map.setView([center.lat, fs.longitude]);
-                    break;
-            };
-        },
-        // check if app is loaded in an iframe
-        checkWindowLocation(ifTrue, ifFalse) {
-            if ( window.location === window.parent.location ) {	  
-                return ifTrue;
-            } else {	  
-                return ifFalse;
-            };
-        },
-        // check if data from drive has been loaded 
-        checkPageStatus() {
-            if(page_status == undefined) {
-                window.setTimeout(this.checkPageStatus,10);
-            } else {
-                // check if app loaded in an iframe
-                this.iframe ? this.sidebar.open("home") : this.sidebar.open("search-tab"); 
-                // focus on search bar
-                // document.getElementById("search-field").focus();
-
-                let circle_markers = L.layerGroup({});
-
-                for(let i=0; i<fs_tab_fetched.length; i++) {
-                    e = fs_tab_fetched[i];
-
-                    circle = L.circleMarker([e.latitude, e.longitude], this.circles);
-
-                    circleAnchor = L.circleMarker([e.latitude, e.longitude], {
-                        radius:20,
-                        fillOpacity:0,
-                        opacity:0
-                    })
-                    .on("mouseover", (e) => { 
-                        this.onMouseover(e.sourceTarget.content);
-                        this.getMarkertoHover(e.sourceTarget.content.matricule)
-                    })
-                    .on("mouseout", () => { 
-                        this.onMouseOut();
-                    })
-                    .on("click", (e) => { 
-                        this.displayInfo(e.sourceTarget.content);
-                    });
-
-                    circle.setStyle({fillColor:this.getMarkerColor(e.type)})
-                    circle.content = e;
-                    circleAnchor.content = e;
-                    circle_markers.addLayer(circle);
-                    circle_markers.addLayer(circleAnchor);
-                };
-
-                this.map.addLayer(circle_markers);
-
-                this.checkURLParams();
-            }
         },
     },
     watch: {
@@ -1547,7 +1239,7 @@ let map_template = {
                 searchRadius = this.params.get('radius')
             } else {
                 searchRadius = this.searchRadius
-            };
+            }
 
             this.fs_cards = closest_fs.filter(e => {
                 return e.distance <= searchRadius
@@ -1644,18 +1336,405 @@ let map_template = {
         // });
 
     },
+    methods: {
+        initMap() {
+            this.params = params;
+            this.url = url;
+
+            searchQuery = document.getElementById('search-field');
+            searchQuery.value = params.get("qlabel") || "";
+
+            let defaultZoomLevel = this.iframe ? 6 : 5.55;
+
+            // const map = L.map('mapid', this.mapOptions);
+            const map = new L.map('mapid', {
+                center: [params.get("lat") || 46.413220, params.get("lng") || 1.219482],
+                zoom:params.get("z") || defaultZoomLevel,
+                preferCanvas: true,
+                zoomControl:false
+            });
+
+            // Get url parameters
+            map.on("moveend", () => {
+                // get map params
+                lat = map.getCenter().lat.toFixed(6);
+                lng = map.getCenter().lng.toFixed(6);
+                zoom = map.getZoom();
+
+                params.set("lat",lat);
+                params.set("lng",lng);
+                params.set("z",zoom);
+             
+                window.history.pushState({},'',url)
+            });
+            
+            // this.iframe ? map.setZoom(6) : map.setZoom(5.55);
+            L.tileLayer(this.mapOptions.url,{ attribution:this.mapOptions.attribution }).addTo(map);
+            this.map = map;
+            // zoom control, fullscreen & scale bar
+            L.control.zoom({position: 'topright'}).addTo(map);
+            L.control.fullscreen({
+                position:'topright',
+                forcePseudoFullScreen:true,
+            }).addTo(this.map);
+            L.control.scale({ position: 'bottomright', imperial:false }).addTo(map);
+
+            // sidebar
+            const sidebar = window.L.control.sidebar({
+                autopan: true, 
+                closeButton: true, 
+                container: "sidebar", 
+                position: "left"
+            }).addTo(map);
+            this.sidebar = sidebar;
+            
+            // legend
+            const legend = L.control({position: 'topright'});
+
+            legend.onAdd = function (map) {
+                let expand = false;
+                var div = L.DomUtil.create('div', 'leaflet-legend');
+                div.title = "Légende";
+                div.ariaLabel = "Légende";
+
+                let content_default = "<i class='la la-list' aria-label='Légende'></i>";
+                div.innerHTML += content_default;
+                
+                div.addEventListener("click", () => {
+                    event.stopPropagation()
+                    if(expand === false) {
+                        expand = true;
+                        // here we can fill the legend with colors, strings and whatever
+                        div.innerHTML = `<span style="font-family:'Marianne-Bold'">Type de structure</span><br>`;
+                        div.innerHTML += `<span class="leaflet-legend-marker-siege"></span><span> Site principal</span><br>`;
+                        div.innerHTML += `<span class="leaflet-legend-marker-bus"></span><span> Bus itinérant</span><br>`;
+                        div.innerHTML += `<span class="leaflet-legend-marker-antenne"></span><span> Antenne</span><br>`;
+                    } else if (expand == true) {
+                        expand = false;
+                        div.innerHTML = content_default;
+                    };
+                    map.on("click", ()=>{
+                        if(expand === true) {
+                            expand = false
+                            div.innerHTML = content_default;
+                        };
+                    });
+                });
+                return div;
+            };
+            legend.addTo(map);
+
+            // texte en cours de développement
+            const enDeveloppement = L.control({position: 'topleft'});
+            enDeveloppement.onAdd = function() {
+                let div = L.DomUtil.create('div','en-developpement');
+                div.innerHTML += `<h5 style="font-family:'Marianne-Bold';color:red;background-color:white; padding:5px; border: solid 1px red">/!\\ DEVELOPPEMENT EN COURS /!\\</h5>`;
+                return div;
+            };
+            enDeveloppement.addTo(map);
+
+            // on click remove previous clicked marker
+            map.on("click",(e) => {
+                if(map.hasLayer(this.clickedMarkerLayer)) {
+                    // this.clickedMarkerLayer.clearLayers();
+                };
+                event.stopPropagation();
+            })
+        },
+        loadDep() {
+            fetch("data/geom_dep.geojson")
+            .then(res => res.json())
+            .then(res => {
+                this.geom_dep = res;
+                sessionStorage.setItem("LocalGeomDep",JSON.stringify(res))
+            });
+        },
+        flyToBoundsWithOffset(layer) {
+            let offset = document.querySelector('.leaflet-sidebar-content').getBoundingClientRect().width;
+            this.map.flyToBounds(layer, {paddingTopLeft: [offset, 0], duration:0.75})
+        },
+        onMouseover(fs) {
+            this.markerToHover.coords = [fs.latitude, fs.longitude];
+            this.markerToHover.lib = fs.lib_fs;
+            
+            id = fs.matricule;
+            if(this.fs_cards) {
+                this.hoveredMarker = id; // send hovered marker's ID to children cards 
+            };
+        },
+        onMouseOut() {
+            this.hoveredMarker = '';
+            this.markerToHover.coords = '';
+            // this.markerToHover.lib = '';
+            this.getMarkertoHover('');  
+        },
+        displayInfo(fs) {
+            this.sidebar.open('search-tab');          
+            // send info of the one clicked point to children (cards)
+            if(fs.distance) {
+                delete fs.distance;
+            };
+            this.fs_cards = [fs];
+            
+            // add white stroke to clicked
+            this.clickedMarkerLayer.clearLayers();
+            let glowStyle = {
+                radius:10,
+                weight:10,
+                color:'rgba(245,245,245,.75)',
+                fillColor:this.getMarkerColor(fs.type),
+                fillOpacity:1,
+                interactive:false
+            };
+            let glow10 = new L.circleMarker([fs.latitude, fs.longitude], glowStyle, { weight:10 });
+            let glow15 = new L.circleMarker([fs.latitude, fs.longitude], glowStyle, { weight:15 });
+
+            let tooltipContent = `
+                    <span class='leaflet-tooltip-header ${this.getTooltipCategory(fs.type)}'>
+                        ${fs.lib_fs}
+                    </span>
+                    <span class='leaflet-tooltip-body'>
+                        ${fs.code_postal} ${fs.lib_com}
+                    </span>`
+
+            // add marker icon
+            let marker = new L.marker([fs.latitude, fs.longitude], {
+                icon:L.icon({
+                    iconUrl:this.getIconCategory(fs.type),  
+                    iconSize: [40, 40],
+                    iconAnchor: [20, 40]
+                })
+            }).addTo(this.map);
+
+            marker.bindTooltip(tooltipContent, {
+                direction:'top',
+                opacity:1,
+                permanent:true, 
+            });
+
+            [glow15,glow10,marker].forEach(el => this.clickedMarkerLayer.addLayer(el))
+
+            // remove buffer and address marker
+            this.maskLayer.clearLayers();
+            this.adressLayer.clearLayers();
+
+            // setup url params
+            this.clearURLParams();
+            this.params.set("lat", this.map.getCenter().lat.toFixed(6))
+            this.params.set("lng", this.map.getCenter().lng.toFixed(6))
+            this.params.set("z", this.map.getZoom())
+            this.params.set("qtype","click");
+            this.params.set("matricule",fs.matricule);
+            window.history.pushState({},'',this.url);
+        },
+        // styles
+        getMarkerColor(type) {
+            switch (type) {
+                case "Siège":
+                    return "rgb(41,49,115)";
+                case "Antenne":
+                    return "#5770be";
+                case "Bus":
+                    return "#00ac8c";
+            };
+        },
+        getIconCategory(type) {
+            if(type === "Siège") {
+                return './img/picto_siege.png'
+            } else if(type === "Antenne"){
+                return './img/picto_antenne.png'
+            } 
+            else if(type === "Bus"){
+                return './img/picto_itinerante.png'
+            }
+        },
+        getTooltipCategory(type) {
+            if(type === "Siège") {
+                return 'siege'
+            } else if(type === "Antenne") {
+                return 'antenne'
+            } else if(type === "Bus") {
+                return 'bus'
+            }
+        },
+        getMarkertoHover(id) {
+            if (id) {
+                let fs = this.data.filter(e => {
+                    return e.matricule == id;
+                })[0];
+
+                this.markerToHover.coords =  [fs.latitude, fs.longitude];
+                let type = fs.type;
+
+                markerToHover = L.marker(this.markerToHover.coords, {
+                    className:'fs-marker',
+                    icon:L.icon({
+                        iconUrl:this.getIconCategory(type),  
+                        iconSize: [40, 40],
+                        iconAnchor: [20, 40]
+                    })
+                }).addTo(this.map);
+                
+                let tooltipContent = `
+                                <span class='leaflet-tooltip-header ${this.getTooltipCategory(type)}'>${fs.lib_fs}</span>
+                                <span class='leaflet-tooltip-body'>${fs.code_postal} ${fs.lib_com}</span>`
+
+                markerToHover.bindTooltip(tooltipContent, {
+                    direction:'top',
+                    opacity:1,
+                    permanent:true, 
+                });
+
+            } else {
+                markerToHover.removeFrom(this.map);
+                this.markerToHover.coords = '';
+                this.markerToHover.lib = '';
+            }
+        },
+        getSearchResult(e) {
+            // get result infos emitted from search group
+            if(e.resultType == "address") {
+                this.marker = e.resultCoords;
+                this.marker_tooltip = e.resultLabel;
+            } else {
+                if(this.geom_dep) {
+                    this.depFilter = e.resultCode;
+                }
+            }
+        },
+        updateBuffer(new_radius) {
+            this.searchRadius = new_radius;
+            if(this.buffer) {
+                this.buffer.setRadius(new_radius*1000);
+                this.fs_cards = this.data.filter(e => {
+                    return e.distance <= new_radius
+                }).sort((a,b) => {
+                    if(a.distance > b.distance) {
+                        return 1;
+                    } else if (a.distance < b.distance) {
+                        return -1
+                    } else if (a.distance === b.distance) {
+                        return 0
+                    }
+                });
+                this.flyToBoundsWithOffset(this.buffer);
+            };
+        },
+        zoomOnResults() {
+            let bounds = this.fs_cards.map(e => {
+                return [e.latitude,e.longitude]
+            });
+            this.flyToBoundsWithOffset(bounds);
+        },
+        clearMap() {
+            this.fs_cards = '';
+            this.markerToHover.coordinates = '';
+            this.clickedMarkerLayer.clearLayers();
+            this.maskLayer.clearLayers();
+            this.adressLayer.clearLayers();
+            this.map.flyTo(this.mapOptions.center, this.mapOptions.zoom, {duration:0.5});
+
+            // purge url params
+            this.clearURLParams();
+        },
+        clearURLParams() {
+           this.url.search = '';
+        },
+        openSearchPanel() {
+            this.sidebar.open('search-tab')
+        },
+        checkURLParams() {
+            let params = this.params;
+            queryType = params.get("qtype");
+
+            if(queryType) {
+                this.sidebar.open("search-tab");
+            }
+            switch (queryType) {
+                case "address":
+                    let resultMarker = params.get("qlatlng").split(",");
+                    let resultLabel = params.get("qlabel");    
+                    this.marker = resultMarker;
+                    this.marker_tooltip = resultLabel;                    
+                    this.sidebar.open("search-tab");
+                    break;
+                case "admin":
+                    let resultCodeDep = params.get("qcode");
+                    console.log(resultCodeDep);
+                    this.depFilter = resultCodeDep;
+                    this.sidebar.open("search-tab");
+                break;
+                case "click":
+                    let id = params.get("matricule");
+                    let fs = fs_tab_fetched.filter(e => e.matricule == id)[0];
+                    this.displayInfo(fs);                    
+                    center = this.map.getCenter();
+                    this.map.setView([center.lat, fs.longitude]);
+                    break;
+            };
+        },
+        // check if app is loaded in an iframe
+        checkWindowLocation(ifTrue, ifFalse) {
+            if ( window.location === window.parent.location ) {	  
+                return ifTrue;
+            } else {	  
+                return ifFalse;
+            };
+        },
+        // check if data from drive has been loaded 
+        checkPageStatus() {
+            if(page_status == undefined) {
+                window.setTimeout(this.checkPageStatus,10);
+            } else {
+                // check if app loaded in an iframe
+                this.iframe ? this.sidebar.open("home") : this.sidebar.open("search-tab"); 
+                // focus on search bar
+                // document.getElementById("search-field").focus();
+
+                let circleMarkersLayer = L.layerGroup({});
+
+                for(let i=0; i<fs_tab_fetched.length; i++) {
+                    e = fs_tab_fetched[i];
+
+                    let circle = L.circleMarker([e.latitude, e.longitude], this.circlesStyle);
+                    circle.setStyle({fillColor:this.getMarkerColor(e.type)})
+                    circle.content = e;
+
+                    let circleAnchor = L.circleMarker([e.latitude, e.longitude], {
+                        radius:20,
+                        fillOpacity:0,
+                        opacity:0
+                    }).on("mouseover", (e) => { 
+                        this.onMouseover(e.sourceTarget.content);
+                        this.getMarkertoHover(e.sourceTarget.content.matricule)
+                    }).on("mouseout", () => { 
+                        this.onMouseOut();
+                    }).on("click", (e) => { 
+                        this.displayInfo(e.sourceTarget.content);
+                    });
+                    circleAnchor.content = e;
+                    circleMarkersLayer.addLayer(circle);
+                    circleMarkersLayer.addLayer(circleAnchor);
+                }
+
+                this.map.addLayer(circleMarkersLayer);
+
+                this.checkURLParams();
+            }
+        },
+    }
 };
 
 const routes = [
     {
         name:'carte',
         path:'/',
-        component: map_template
+        component: mapComponent
     },
     {
         name: 'fiche',
         path: '/fiche:matricule', 
-        component: pdfTemplate, 
+        component: pdfComponent, 
         props:true,
     },
 ];
