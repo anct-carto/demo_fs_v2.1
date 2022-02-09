@@ -65,7 +65,6 @@ const print_options = {
     ]
 };
 
-Vue.use(VueHtmlToPaper, print_options);
 
 
 
@@ -430,11 +429,12 @@ let pdfComponent = {
         <div class="container-sm" id="fiche-pdf" style="font-family:'Marianne-Regular'">
             <div>
                 <img src="img/logo_anct.png" style="height:110px;margin-bottom:40px;margin-left:-30px">
+                <img src="img/logo_FranceServices_sans-marianne-01.jpg" style="height:65px;margin-bottom:20px;margin-left:280px">
                 <!--<img src="img/logo_FranceServices-01.png" style="height:150px;margin-bottom:40px;">-->
             </div>
-            <div class="row" style="background:rgb(254,254,254);font-size:.9em">
+            <div class="row" style="background:rgb(254,254,254);font-size:1.1em">
                 <div class="col-8 p-0">
-                    <span style="font-size:.8em">Fiche d'identité France services - téléchargée le {{ date }}</span>
+                    <span style="font-size:.8em">Fiche d'information France services - données extraites le {{ date }}</span>
                     <h2 style='font-weight:bolder'><b>{{ fs.lib_fs }}</b></h2><br>
                     <div class = "intro">
                         <p v-if="fs.itinerance=='oui'">
@@ -442,7 +442,7 @@ let pdfComponent = {
                             <span>Attention : cette France services est en itinérance</span>
                         </p>
                         <div class="row">
-                            <div class="col-5">
+                            <div class="col-6">
                                 <h5>
                                     <!--<i class = "las la-map-marker"></i>-->
                                     <b>Adresse</b>
@@ -459,6 +459,32 @@ let pdfComponent = {
                                     </span>
                                 </div><br>
                                 <div>
+                                    <p>
+                                        <h5>
+                                            <!--<i class = "las la-clock"></i>-->
+                                            <b>Horaires d'ouverture</b>
+                                        </h5>
+                                        <ul style="list-style: none;display: inline-block;padding-left: 5px;">
+                                            <li>
+                                                <b>Lundi : </b>{{ fs.h_lundi }} 
+                                            </li>
+                                            <li>
+                                                <b>Mardi : </b>{{ fs.h_mardi }} 
+                                            </li>
+                                            <li>
+                                                <b>Mercredi : </b>{{ fs.h_mercredi }} 
+                                            </li>
+                                            <li>
+                                                <b>Jeudi : </b>{{ fs.h_jeudi }} 
+                                            </li>
+                                            <li>
+                                                <b>Vendredi : </b>{{ fs.h_vendredi }} 
+                                            </li>
+                                            <li>
+                                                <b>Samedi : </b>{{ fs.h_samedi }} 
+                                            </li>
+                                        </ul>
+                                    </p>
                                     <h5>
                                         <!--<i class = "las la-phone"></i>-->
                                         <b>Contact</b>
@@ -467,38 +493,13 @@ let pdfComponent = {
                                     <span v-if = "fs.mail"><b>Courriel : </b><a v-bind:href = "'mailto:' + fs.mail" target = "_blank">{{ fs.mail }}</a></span>
                                 </div><br>
                             </div>
-                            <div class="col-6">
+                            <div class="col-5">
                                 <div id="map-pdf" style="height:300px"></div>
                             </div>
                         </div>
                     </div><br>
                     <div class="corps">
-                        <p>
-                            <h5>
-                                <!--<i class = "las la-clock"></i>-->
-                                <b>Horaires d'ouverture</b>
-                            </h5>
-                            <ul style="list-style: none;display: inline-block;padding-left: 5px;">
-                                <li>
-                                    <b>Lundi : </b>{{ fs.h_lundi }} 
-                                </li>
-                                <li>
-                                    <b>Mardi : </b>{{ fs.h_mardi }} 
-                                </li>
-                                <li>
-                                    <b>Mercredi : </b>{{ fs.h_mercredi }} 
-                                </li>
-                                <li>
-                                    <b>Jeudi : </b>{{ fs.h_jeudi }} 
-                                </li>
-                                <li>
-                                    <b>Vendredi : </b>{{ fs.h_vendredi }} 
-                                </li>
-                                <li>
-                                    <b>Samedi : </b>{{ fs.h_samedi }} 
-                                </li>
-                            </ul>
-                        </p>
+
                         <div v-if="fs.commentaire_horaires">
                             <!--<i class = "las la-info-circle"></i>-->
                             <h5><b>Commentaire(s)</b></h5>
