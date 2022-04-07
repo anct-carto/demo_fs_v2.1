@@ -1436,10 +1436,11 @@ let mapComponent = {
 
             // on click remove previous clicked marker
             map.on("click",(e) => {
-                if(map.hasLayer(this.clickedMarkerLayer)) {
-                    // this.clickedMarkerLayer.clearLayers();
-                };
                 event.stopPropagation();
+                // this.clickedMarkerLayer.clearLayers();
+                this.clearURLParams();
+                this.clearMap()
+
             })
         },
         loadDep() {
@@ -1470,6 +1471,8 @@ let mapComponent = {
             this.getMarkertoHover('');  
         },
         displayInfo(fs) {
+            // empêcher le déclenchement de la réinitialisation si cliqué
+
             this.sidebar.open('search-tab');          
             // send info of the one clicked point to children (cards)
             if(fs.distance) {
@@ -1633,7 +1636,7 @@ let mapComponent = {
             this.clickedMarkerLayer.clearLayers();
             this.maskLayer.clearLayers();
             this.adressLayer.clearLayers();
-            this.map.flyTo(this.mapOptions.center, this.mapOptions.zoom, {duration:0.5});
+            // this.map.flyTo(this.mapOptions.center, this.mapOptions.zoom, {duration:0.5});
 
             // purge url params
             this.clearURLParams();
@@ -1711,6 +1714,7 @@ let mapComponent = {
                     }).on("mouseout", () => { 
                         this.onMouseOut();
                     }).on("click", (e) => { 
+                        L.DomEvent.stopPropagation(e);
                         this.displayInfo(e.sourceTarget.content);
                     });
                     circleAnchor.content = e;
