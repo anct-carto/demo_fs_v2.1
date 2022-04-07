@@ -696,11 +696,35 @@ input[type="range"]::-moz-range-progress {
   }
 
 /* -------------------------------------------------------------------------- */
-/* 								 SCROLL BAR						   	 		  */													
+/* 								 FICHE PDF						   	 		  */													
 /* -------------------------------------------------------------------------- */
 
 #fiche-pdf {
 	line-height: 15pt;
+	width: 210mm;
+	height:297mm;
+	font-family:'Marianne-Regular';
+}
+
+.header-pdf-logos {
+	display:flex;
+	justify-content: space-between;
+	margin-top:5mm;
+	margin-bottom:8mm;
+	width: 90%
+}
+
+.logo-rf {
+	width:28mm;
+}
+
+.logo-fs {
+	height: 18.5mm;
+	margin-top:7mm;
+}
+
+#map-pdf {
+	height:80mm;
 }
 
 
