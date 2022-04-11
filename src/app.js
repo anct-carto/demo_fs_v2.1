@@ -1,4 +1,9 @@
+/*
+    Annuaire cartographique France services v2.1
+    Hassen Chougar / ANCT service cartographie
+    dependances : Leaflet v1.0.7, vue v2.6.12, vue-router v4.0.5, bootstrap v4.6.0, papaparse v5.3.1
 
+*/
 
 // geocode
 const api_adresse = "https://api-adresse.data.gouv.fr/search/?q=";
@@ -10,9 +15,9 @@ const url = new URL(window.location.href);
 const params = url.searchParams;
 const qtype = params.get("qtype");
 
-window.googleDocCallback = function () { return true; };
-// const data_url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTYHKBasZmLcPAmjQUG08ca3R8z2VeK_ySbNZHXKWgVH7OlvrLMN3Cio3nHByxNgnK3IqoxAuOUAMCT/pub?gid=732208678&single=true&output=csv"
-const data_url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRuDOzH3iy8ZNpDJiXHLyILhTgmEdeJUa7GicPR7QdEngN6d4jPMFvfERkVOTN0qal96k5aeGXtxMzA/pub?output=csv&callback=googleDocCallback"
+// window.googleDocCallback = function () { return true; };
+// const data_url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRuDOzH3iy8ZNpDJiXHLyILhTgmEdeJUa7GicPR7QdEngN6d4jPMFvfERkVOTN0qal96k5aeGXtxMzA/pub?output=csv&callback=googleDocCallback"
+const data_url = "https://www.data.gouv.fr/fr/datasets/r/afc3f97f-0ef5-429b-bf16-7b7876d27cd4"
 let fs_tab_fetched = [];
 let page_status;
 
@@ -21,15 +26,21 @@ function init() {
     Papa.parse(data_url, {
         download: true,
         header: true,
+        skipEmptyLines:true,
         complete: (results) => fetchSpreadsheetData(results.data)
     });
 };
 
 function fetchSpreadsheetData(res) {
     res.forEach(e => { fs_tab_fetched.push(e)});
+    // transformations avant utilisation
     fs_tab_fetched.forEach(e => {
         e.itinerance = e["itinerance"].toLowerCase();
-        if(e.itinerance == "non") {
+        if(e.id_fs) {
+            e.matricule = e.id_fs;
+        }
+        
+        if(e.itinerance == "non" || e.itinerance == "") {
             if(e.format_fs == "Espace labellisé") {
                 e.type = "Siège";
             } else if(e.format_fs == "Antenne") {
@@ -43,7 +54,7 @@ function fetchSpreadsheetData(res) {
     fs_tab_fetched = fs_tab_fetched.filter(e => {
         return e.latitude != 0 & e.latitude != "" & e.longitude != 0 & e.longitude != ""
     });
-    sessionStorage.setItem("session_local", JSON.stringify(fs_tab_fetched))
+    sessionStorage.setItem("session_local", JSON.stringify(fs_tab_fetched));
     loading.remove();
     page_status = "loaded";
 };
@@ -389,9 +400,9 @@ let pdfComponent = {
 
         L.control.scale({ position: 'bottomright', imperial:false }).addTo(map);
 
-        let tooltipContent = `
-        <span class='leaflet-tooltip-header ${this.tooltipType}'>${fs.lib_fs}</span>
-        <span class='leaflet-tooltip-body'>${fs.code_postal} ${fs.lib_com}</span>`;
+        // let tooltipContent = `
+        // <span class='leaflet-tooltip-header ${this.tooltipType}'>${fs.lib_fs}</span>
+        // <span class='leaflet-tooltip-body'>${fs.code_postal} ${fs.lib_com}</span>`;
 
         new L.marker(coords, {
             icon: L.icon({
@@ -1005,7 +1016,7 @@ let sidebarComponent = {
                     </div>
                     <div>
                         <div id="search-inputs">
-                            <search-group @searchResult="getSearchResult" @searchType="getSearchType" @clearSearch="clearSearch"></search-group>
+                            <search-group @searchResult="getSearchResult" @searchType="getSearchType" @clearSearch="clearSearch" ref="searchGroup"></search-group>
                             <hr/>
                             <slider @radiusVal="radiusVal" v-if="params.get('qtype')=='address'"></slider>
                         </div>
