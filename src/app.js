@@ -38,6 +38,7 @@ function fetchSpreadsheetData(res) {
         e.itinerance = e["itinerance"].toLowerCase();
         if(e.id_fs) {
             e.matricule = e.id_fs;
+            e.departement = e.insee_dep
         }
         
         if(e.itinerance == "non" || e.itinerance == "") {
